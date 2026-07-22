@@ -1,6 +1,6 @@
 console.info("[SIGSS] pdf carregado");
 
-export async function baixarPdf(urlPdfOriginal) {
+async function baixarPdf(urlPdfOriginal) {
     const response = await fetch(urlPdfOriginal);
     if (!response.ok) {
         throw new Error(`Falha ao baixar PDF: HTTP ${response.status}`);
@@ -8,7 +8,7 @@ export async function baixarPdf(urlPdfOriginal) {
     return await response.arrayBuffer();
 }
 
-export async function editarPdf(arrayBuffer, textoEnumeracao) {
+async function editarPdf(arrayBuffer, textoEnumeracao) {
     const pdfLib = (typeof window !== 'undefined' && window.PDFLib) || (typeof global !== 'undefined' && global.PDFLib);
     if (!pdfLib) {
         throw new Error('Biblioteca pdf-lib não carregada no contexto.');
@@ -41,7 +41,7 @@ export async function editarPdf(arrayBuffer, textoEnumeracao) {
     return pdfBytes.buffer;
 }
 
-export function abrirPdf(arrayBufferModificado, windowOpenOriginal) {
+function abrirPdf(arrayBufferModificado, windowOpenOriginal) {
     const blob = new Blob([arrayBufferModificado], { type: 'application/pdf' });
     const blobUrl = URL.createObjectURL(blob);
 
@@ -59,4 +59,8 @@ if (typeof window !== 'undefined') {
     window.baixarPdf = baixarPdf;
     window.editarPdf = editarPdf;
     window.abrirPdf = abrirPdf;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { baixarPdf, editarPdf, abrirPdf };
 }

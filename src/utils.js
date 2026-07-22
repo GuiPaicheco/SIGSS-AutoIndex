@@ -1,8 +1,6 @@
 console.info("[SIGSS] utils carregado");
 
-import { SELETORES_INPUT_SIGSS } from './constants.js';
-
-export async function obterCodigoSIGSS(urlReport = null) {
+async function obterCodigoSIGSS(urlReport = null) {
     try {
         const codigoDoInput = lerCodigoDoInputTela();
         if (codigoDoInput) {
@@ -28,7 +26,22 @@ function lerCodigoDoInputTela() {
         const doc = typeof document !== 'undefined' ? document : null;
         if (!doc) return null;
 
-        const seletores = (typeof window !== 'undefined' && window.SELETORES_INPUT_SIGSS) || SELETORES_INPUT_SIGSS;
+        const seletores = (typeof window !== 'undefined' && window.SELETORES_INPUT_SIGSS) || [
+            'input[name*="codigoSigss"]',
+            'input[name*="codSigss"]',
+            'input[id*="codigoSigss"]',
+            'input[id*="codSigss"]',
+            'input[name*="isenCod"]',
+            'input[id*="isenCod"]',
+            'input[name*="prontuario"]',
+            'input[id*="prontuario"]',
+            'input[name*="codigoFaa"]',
+            'input[id*="codigoFaa"]',
+            '#codigoSigss',
+            '#codSigss',
+            '#isenCod',
+            '#prontuario'
+        ];
 
         for (const seletor of seletores) {
             const elemento = doc.querySelector(seletor);
@@ -79,4 +92,8 @@ async function lerCodigoDoDocumentoPdf(urlReport) {
 
 if (typeof window !== 'undefined') {
     window.obterCodigoSIGSS = obterCodigoSIGSS;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { obterCodigoSIGSS };
 }

@@ -4,21 +4,21 @@ console.info("[SIGSS] constants carregado");
  * Constantes globais do sistema SIGSS-AutoIndex (v0.4.4)
  */
 
-export const DEBUG_MODE = true;
+const DEBUG_MODE = true;
 
-export const ENDPOINTS = {
+const ENDPOINTS = {
     IMPRIMIR_FAA: 'atendimentoConsulta/imprimirFAA',
     LISTA_IMOVEL: 'imobiliarioFamiliar2/lista',
     VISUALIZAR_IMOVEL: 'imobiliarioFamiliar/visualizar',
     GET_ISAD: 'imobiliarioFamiliar/getIsad'
 };
 
-export const MENSAGENS_ENUMERACAO = {
+const MENSAGENS_ENUMERACAO = {
     NAO_ENCONTRADO: 'Não encontrado em imóvel',
     MULTIPLOS_ENCONTRADOS: 'Múltiplos imóveis encontrados'
 };
 
-export const SELETORES_INPUT_SIGSS = [
+const SELETORES_INPUT_SIGSS = [
     'input[name*="codigoSigss"]',
     'input[name*="codSigss"]',
     'input[id*="codigoSigss"]',
@@ -35,7 +35,7 @@ export const SELETORES_INPUT_SIGSS = [
     '#prontuario'
 ];
 
-export const MAPEAMENTO_EQUIPES = {
+const MAPEAMENTO_EQUIPES = {
     '085': '01',
     '086': '03',
     '087': '02',
@@ -47,7 +47,7 @@ export const MAPEAMENTO_EQUIPES = {
     '87': '02'
 };
 
-export const EQUIPES_CONFIG = [
+const EQUIPES_CONFIG = [
     {
         equipeNome: 'Equipe 01',
         codigoESF: '085',
@@ -94,4 +94,15 @@ if (typeof window !== 'undefined') {
     window.SELETORES_INPUT_SIGSS = SELETORES_INPUT_SIGSS;
     window.MAPEAMENTO_EQUIPES = MAPEAMENTO_EQUIPES;
     window.EQUIPES_CONFIG = EQUIPES_CONFIG;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        DEBUG_MODE,
+        ENDPOINTS,
+        MENSAGENS_ENUMERACAO,
+        SELETORES_INPUT_SIGSS,
+        MAPEAMENTO_EQUIPES,
+        EQUIPES_CONFIG
+    };
 }

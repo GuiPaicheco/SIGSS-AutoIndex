@@ -1,6 +1,6 @@
 # SIGSS-AutoIndex - Pipeline Inteligente de Impressão de Prontuários (FAA)
 
-> Extensão para Google Chrome desenvolvida para automatizar de maneira 100% transparente a enumeração dos prontuários emitidos pelo sistema SIGSS da Prefeitura de Betim.
+> Extensão para Google Chrome desenvolvida por Guilherme Paicheco Ferreira para automatizar de maneira 100% transparente a enumeração dos prontuários emitidos pelo sistema SIGSS da Prefeitura de Betim.
 
 ---
 

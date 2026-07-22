@@ -1,11 +1,11 @@
 console.info("[SIGSS] formatter carregado");
 
-import { MENSAGENS_ENUMERACAO } from './constants.js';
-import { getSufixoEquipePorESF } from './equipes.js';
-
-export function formatarEnumeracao(dados) {
-    const msgs = (typeof window !== 'undefined' && window.MENSAGENS_ENUMERACAO) || MENSAGENS_ENUMERACAO;
-    const fnSufixo = (typeof window !== 'undefined' && window.getSufixoEquipePorESF) || getSufixoEquipePorESF;
+function formatarEnumeracao(dados) {
+    const msgs = (typeof window !== 'undefined' && window.MENSAGENS_ENUMERACAO) || {
+        NAO_ENCONTRADO: 'Não encontrado em imóvel',
+        MULTIPLOS_ENCONTRADOS: 'Múltiplos imóveis encontrados'
+    };
+    const fnSufixo = (typeof window !== 'undefined' && window.getSufixoEquipePorESF) || (() => '01');
 
     if (!dados) {
         return msgs.NAO_ENCONTRADO;
@@ -48,4 +48,8 @@ export function formatarEnumeracao(dados) {
 
 if (typeof window !== 'undefined') {
     window.formatarEnumeracao = formatarEnumeracao;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { formatarEnumeracao };
 }

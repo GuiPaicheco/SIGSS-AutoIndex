@@ -1,20 +1,15 @@
 console.info("[SIGSS] 15 - pipeline carregado");
 
-import { obterCodigoSIGSS } from './utils.js';
-import { pesquisarImovelEGerarEnumeracao } from './imovel.js';
-import { formatarEnumeracao } from './formatter.js';
-import { baixarPdf, editarPdf, abrirPdf } from './pdf.js';
-
-export async function executarFluxoImpressao(reportUrl, windowName, windowSpecs, windowOpenOriginal) {
+async function executarFluxoImpressao(reportUrl, windowName, windowSpecs, windowOpenOriginal) {
     console.info("[SIGSS] 16 - pipeline iniciado");
     const fnOpen = windowOpenOriginal || window.open;
 
-    const fnObterCodigo = (typeof window !== 'undefined' && window.obterCodigoSIGSS) || obterCodigoSIGSS;
-    const fnPesquisarImovel = (typeof window !== 'undefined' && window.pesquisarImovelEGerarEnumeracao) || pesquisarImovelEGerarEnumeracao;
-    const fnFormatar = (typeof window !== 'undefined' && window.formatarEnumeracao) || formatarEnumeracao;
-    const fnBaixarPdf = (typeof window !== 'undefined' && window.baixarPdf) || baixarPdf;
-    const fnEditarPdf = (typeof window !== 'undefined' && window.editarPdf) || editarPdf;
-    const fnAbrirPdf = (typeof window !== 'undefined' && window.abrirPdf) || abrirPdf;
+    const fnObterCodigo = (typeof window !== 'undefined' && window.obterCodigoSIGSS) || (typeof obterCodigoSIGSS !== 'undefined' ? obterCodigoSIGSS : null);
+    const fnPesquisarImovel = (typeof window !== 'undefined' && window.pesquisarImovelEGerarEnumeracao) || (typeof pesquisarImovelEGerarEnumeracao !== 'undefined' ? pesquisarImovelEGerarEnumeracao : null);
+    const fnFormatar = (typeof window !== 'undefined' && window.formatarEnumeracao) || (typeof formatarEnumeracao !== 'undefined' ? formatarEnumeracao : null);
+    const fnBaixarPdf = (typeof window !== 'undefined' && window.baixarPdf) || (typeof baixarPdf !== 'undefined' ? baixarPdf : null);
+    const fnEditarPdf = (typeof window !== 'undefined' && window.editarPdf) || (typeof editarPdf !== 'undefined' ? editarPdf : null);
+    const fnAbrirPdf = (typeof window !== 'undefined' && window.abrirPdf) || (typeof abrirPdf !== 'undefined' ? abrirPdf : null);
 
     try {
         console.info("[SIGSS] 17 - obtendo código SIGSS");
@@ -48,4 +43,8 @@ export async function executarFluxoImpressao(reportUrl, windowName, windowSpecs,
 
 if (typeof window !== 'undefined') {
     window.executarFluxoImpressao = executarFluxoImpressao;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { executarFluxoImpressao };
 }

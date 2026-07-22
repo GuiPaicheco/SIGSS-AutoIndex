@@ -1,10 +1,10 @@
 console.info("[SIGSS] imovel carregado");
 
-import { ENDPOINTS, MENSAGENS_ENUMERACAO } from './constants.js';
-import { getSufixoEquipePorESF } from './equipes.js';
-
-export async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
-    const msgs = (typeof window !== 'undefined' && window.MENSAGENS_ENUMERACAO) || MENSAGENS_ENUMERACAO;
+async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
+    const msgs = (typeof window !== 'undefined' && window.MENSAGENS_ENUMERACAO) || {
+        NAO_ENCONTRADO: 'Não encontrado em imóvel',
+        MULTIPLOS_ENCONTRADOS: 'Múltiplos imóveis encontrados'
+    };
 
     if (!codigoSigss) {
         return msgs.NAO_ENCONTRADO;
@@ -43,9 +43,13 @@ export async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
     }
 }
 
-export async function buscarImovelPorCodigoSigss(codigoSigss) {
+async function buscarImovelPorCodigoSigss(codigoSigss) {
     try {
-        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || ENDPOINTS;
+        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
+            LISTA_IMOVEL: 'imobiliarioFamiliar2/lista',
+            VISUALIZAR_IMOVEL: 'imobiliarioFamiliar/visualizar',
+            GET_ISAD: 'imobiliarioFamiliar/getIsad'
+        };
         const params = new URLSearchParams({
             searchField: 'isen.isenCod',
             searchString: codigoSigss
@@ -88,9 +92,11 @@ export async function buscarImovelPorCodigoSigss(codigoSigss) {
     }
 }
 
-export async function visualizarImovel(imovPK) {
+async function visualizarImovel(imovPK) {
     try {
-        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || ENDPOINTS;
+        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
+            VISUALIZAR_IMOVEL: 'imobiliarioFamiliar/visualizar'
+        };
         const formData = new URLSearchParams();
         formData.append('imovPK.idp', imovPK.idp);
         formData.append('imovPK.ids', imovPK.ids);
@@ -111,9 +117,11 @@ export async function visualizarImovel(imovPK) {
     }
 }
 
-export async function obterDadosIsad(isadPK) {
+async function obterDadosIsad(isadPK) {
     try {
-        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || ENDPOINTS;
+        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
+            GET_ISAD: 'imobiliarioFamiliar/getIsad'
+        };
         const formData = new URLSearchParams();
         formData.append('isadPK.idp', isadPK.idp);
         formData.append('isadPK.ids', isadPK.ids);
@@ -147,8 +155,8 @@ export async function obterDadosIsad(isadPK) {
     }
 }
 
-export function montarCodigoFinal(dadosIsad) {
-    const fnSufixo = (typeof window !== 'undefined' && window.getSufixoEquipePorESF) || getSufixoEquipePorESF;
+function montarCodigoFinal(dadosIsad) {
+    const fnSufixo = (typeof window !== 'undefined' && window.getSufixoEquipePorESF) || (() => '01');
     const areaNumerica = dadosIsad.areaCod.replace(/\D/g, '');
     const codigoEquipeFormatado = areaNumerica.slice(-3).padStart(3, '0');
     const microAreaFormatada = dadosIsad.miarCod.padStart(2, '0');
@@ -196,4 +204,14 @@ if (typeof window !== 'undefined') {
     window.visualizarImovel = visualizarImovel;
     window.obterDadosIsad = obterDadosIsad;
     window.montarCodigoFinal = montarCodigoFinal;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        pesquisarImovelEGerarEnumeracao,
+        buscarImovelPorCodigoSigss,
+        visualizarImovel,
+        obterDadosIsad,
+        montarCodigoFinal
+    };
 }
