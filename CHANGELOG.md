@@ -2,14 +2,22 @@
 
 Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 
+## [0.4.2] - 2026-07-22
+
+### Corrigido
+- Corrigida falha crítica de inicialização (BLOCKER) em ambiente real.
+- Implementado bootstrap no módulo `src/interceptor.js` injetando `src/main.js` como ES Module (`<script type="module">`) na DOM da página.
+- Garantida a exposição de `window.executarFluxoImpressao` para diagnósticos no DevTools.
+- Sobrescrita customizada de `window.open.toString()` retornando `'function open() { [SIGSS-AutoIndex Interceptor Active] }'`.
+- Expansão do padrão de `matches` no `manifest.json` para suportar conexões HTTP de redes internas da UBS (`http://*/*`).
+- Exibição de logs visuais de inicialização estritamente quando `DEBUG_MODE = true`.
+
 ## [0.4.1] - 2026-07-22 (RC-1)
 
 ### Adicionado
 - Primeira versão Release Candidate (RC-1) destinada aos testes e homologação em ambiente real na UBS.
-- Módulo `src/logger.js` e constante `DEBUG_MODE` em `src/constants.js` para controle centralizado de depuração sem `console.log` dispersos.
-- Documento de homologação em campo [`docs/TESTE_REAL.md`](docs/TESTE_REAL.md) contendo instruções e checklist completo para execução na UBS.
-- Auditoria estática e técnica completa do código e do pipeline de impressão.
-- Sem novas funcionalidades ou alterações de arquitetura.
+- Módulo `src/logger.js` e constante `DEBUG_MODE` em `src/constants.js` para controle centralizado de depuração.
+- Documento de homologação em campo [`docs/TESTE_REAL.md`](docs/TESTE_REAL.md) contendo instruções e checklist completo.
 
 ## [0.4.0] - 2026-07-22
 
@@ -19,33 +27,19 @@ Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 - Criação do módulo `src/formatter.js` para formatação isolada da string de enumeração.
 - Integração completa entre interceptação, leitura do Código SIGSS, pesquisa imobiliária e edição do PDF em memória.
 - Processamento integralmente em memória sem criação de cache, banco de dados ou arquivos em disco.
-- Tratamento de falhas resiliente com abertura automática do PDF original sem travar o médico ou o navegador.
-- Inclusão da documentação técnica em `docs/arquitetura.md`, `docs/fluxo.md`, `docs/depuracao.md` e `CONFIG.md`.
 
 ## [0.3.0] - 2026-07-22
 
 ### Adicionado
 - Implementada a integração imobiliária do SIGSS.
 - Fluxo validado e encadeado: `imobiliarioFamiliar2/lista` → `imobiliarioFamiliar/visualizar` → `imobiliarioFamiliar/getIsad`.
-- Funções dedicadas em `src/imovel.js`: `buscarImovelPorCodigoSigss`, `visualizarImovel`, `obterDadosIsad` e `montarCodigoFinal`.
-- Tratamento de cenários de resposta: `0` resultados (`"Não encontrado em imóvel"`), `1` resultado (enumeração exata ex: `086_03_018_03`) e `> 1` resultados (`"Múltiplos imóveis encontrados"`).
-- Sem cache, sem armazenamento local e sem alteração do fluxo do usuário.
 
 ## [0.2.0] - 2026-07-22
 
 ### Adicionado
-- Implementada leitura automática do Código SIGSS.
-- Prioridade de leitura estrita: Input da tela -> Documento/PDF.
-- Centralização dos seletores de input HTML no arquivo `src/constants.js`.
-- Função resiliente `obterCodigoSIGSS` retornando estritamente string ou `null` sem lançar exceções.
-- Garantia de que nenhuma alteração foi feita no fluxo do usuário, sem cache e sem armazenamento local.
+- Implementada leitura automática do Código SIGSS (Input -> Documento/PDF).
 
 ## [0.1.0] - 2026-07-22
 
 ### Adicionado
 - Estrutura base modular do projeto (`manifest.json`, `README.md`, `CHANGELOG.md`).
-- Módulo `src/constants.js` com URLs de endpoints, mensagens padrão e tabela completa de Equipes, ESF e Microáreas.
-- Módulo `src/interceptor.js` com hooks transparentes para `XMLHttpRequest`, `fetch` e `window.open` interceptando a resposta do endpoint `atendimentoConsulta/imprimirFAA`.
-- Módulo `src/equipes.js` para consolidação e consulta de microáreas.
-- Módulos base `src/utils.js`, `src/imovel.js`, `src/pdf.js` e `src/main.js`.
-- Inclusão da biblioteca `lib/pdf-lib.min.js` para processamento de PDF em memória.

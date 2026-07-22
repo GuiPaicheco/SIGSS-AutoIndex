@@ -1,5 +1,5 @@
 /**
- * Constantes globais do sistema SIGSS-AutoIndex (v0.4.1 - RC-1)
+ * Constantes globais do sistema SIGSS-AutoIndex (v0.4.2)
  */
 
 /**

@@ -4,11 +4,16 @@
 
 ---
 
-## 🔬 Fase de Homologação em Ambiente Real (v0.4.1 - RC-1)
+## 🔬 Correção Crítica de Inicialização (v0.4.2 - BLOCKER Resolvido)
 
-O **SIGSS-AutoIndex** concluiu todas as etapas de desenvolvimento de arquitetura e pipeline (v0.1.0 a v0.4.0) e entrou oficialmente na fase de **Homologação e Validação Prática em Ambiente Real** nas Unidades Básicas de Saúde (UBS) do município de Betim.
+A versão **v0.4.2** corrige a inicialização dos módulos ES6 no Manifest V3 do Google Chrome. O script [src/interceptor.js](file:///c:/Users/guilh/Documents/Programação/SIGSS+/src/interceptor.js) agora realiza o bootstrap dinâmico injetando [src/main.js](file:///c:/Users/guilh/Documents/Programação/SIGSS+/src/main.js) como um módulo ES6 (`<script type="module">`) no contexto principal de execução (`world: "MAIN"`), garantindo:
 
-Para orientações sobre a instalação e execução do teste em campo, consulte o [**Guia de Homologação e Teste Real (docs/TESTE_REAL.md)**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/TESTE_REAL.md).
+1. `typeof window.executarFluxoImpressao === "function"`.
+2. Interceptação visível em `window.open.toString()`.
+3. Presença de todos os módulos (`main.js`, `pipeline.js`, `utils.js`, `imovel.js`, `formatter.js`, `pdf.js`) no painel *Sources* do DevTools.
+4. Suporte a URLs com IPs de redes internas da UBS (`http://*/*`).
+
+Para orientações sobre a instalação e execução do teste em campo, consulte o [**Guia de Homologação e Teste Real (docs/TESTE_REAL.md)**](file:///c:/Users/guilh/Documents/Programação/SIGSS+/docs/TESTE_REAL.md).
 
 ---
 
@@ -53,36 +58,10 @@ Toda a orquestração do fluxo de impressão é gerenciada pelo módulo `src/pip
 
 Disponível no diretório [`docs/`](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs):
 - [**docs/TESTE_REAL.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/TESTE_REAL.md): Checklist e guia passo a passo para testes na UBS.
-- [**docs/arquitetura.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/arquitetura.md): Visão geral dos módulos e responsabilidade única.
+- [**docs/arquitetura.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/arquitetura.md): Visão geral dos módulos e mecanismo de bootstrap em `MAIN` world.
 - [**docs/fluxo.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/fluxo.md): Detalhamento passo a passo do fluxo e fallback.
 - [**docs/depuracao.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/depuracao.md): Guia de diagnósticos e inspeção de logs no DevTools.
 - [**CONFIG.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/CONFIG.md): Guia de configuração de constantes e adaptação para outras UBS.
-
----
-
-## 🏗️ Estrutura do Projeto
-
-```
-SIGSS-AutoIndex/
-├── manifest.json       # Configuração do Manifest V3 da extensão Chrome
-├── README.md           # Documentação técnica principal
-├── CHANGELOG.md        # Histórico de alterações por versão
-├── CONFIG.md           # Guia de configuração de constantes e endpoints
-├── docs/               # Documentação técnica (arquitetura, fluxo, depuração, teste real)
-├── lib/
-│   └── pdf-lib.min.js  # Biblioteca pdf-lib para edição de PDF em memória
-└── src/
-    ├── constants.js    # Endpoints, DEBUG_MODE, seletores HTML e equipes/ESF
-    ├── logger.js       # Logger centralizado desacoplado (debug, info, warn, error)
-    ├── equipes.js      # Utilitários de sufixo de equipe
-    ├── utils.js        # Obtenção do Código SIGSS (Prioridade Input → PDF)
-    ├── imovel.js       # Integração imobiliária encadeada (lista -> visualizar -> getIsad)
-    ├── formatter.js    # Formatação isolada da string de enumeração
-    ├── pdf.js          # Leitura, carimbo e exibição de PDF em memória
-    ├── interceptor.js  # Hook de rede e de window.open
-    ├── pipeline.js     # Orquestrador único do Pipeline de Impressão Inteligente
-    └── main.js         # Ponto de entrada da extensão
-```
 
 ---
 
@@ -105,7 +84,8 @@ SIGSS-AutoIndex/
 - [x] **v0.2.0**: Leitura automática do Código SIGSS com prioridade estrita (Input → Documento/PDF).
 - [x] **v0.3.0**: Integração imobiliária do SIGSS através da cadeia validada (`lista → visualizar → getIsad`).
 - [x] **v0.4.0**: Pipeline de Impressão Inteligente com carimbo de PDF em memória e política de fallback.
-- [x] **v0.4.1 (RC-1)**: Versão Release Candidate 1 destinada à validação prática em ambiente real da UBS.
+- [x] **v0.4.1 (RC-1)**: Primeira versão Release Candidate destinada à homologação.
+- [x] **v0.4.2**: Correção do bootstrap de inicialização dos módulos ES6 no contexto `MAIN` da página.
 
 ---
 
