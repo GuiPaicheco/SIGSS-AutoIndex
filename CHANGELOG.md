@@ -1,6 +1,15 @@
-# Registro de Alterações (Changelog) - SIGSS+
+# Registro de Alterações (Changelog) - SIGSS-AutoIndex
 
 Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
+
+## [0.3.0] - 2026-07-22
+
+### Adicionado
+- Implementada a integração imobiliária do SIGSS.
+- Fluxo validado e encadeado: `imobiliarioFamiliar2/lista` → `imobiliarioFamiliar/visualizar` → `imobiliarioFamiliar/getIsad`.
+- Funções dedicadas em `src/imovel.js`: `buscarImovelPorCodigoSigss`, `visualizarImovel`, `obterDadosIsad` e `montarCodigoFinal`.
+- Tratamento de cenários de resposta: `0` resultados (`"Não encontrado em imóvel"`), `1` resultado (enumeração exata ex: `086_03_018_03`) e `> 1` resultados (`"Múltiplos imóveis encontrados"`).
+- Sem cache, sem armazenamento local e sem alteração do fluxo do usuário.
 
 ## [0.2.0] - 2026-07-22
 

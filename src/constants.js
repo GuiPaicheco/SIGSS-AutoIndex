@@ -1,10 +1,12 @@
 /**
- * Constantes globais do sistema SIGSS+
+ * Constantes globais do sistema SIGSS-AutoIndex (v0.3.0)
  */
 
 export const ENDPOINTS = {
     IMPRIMIR_FAA: 'atendimentoConsulta/imprimirFAA',
-    PESQUISA_IMOVEL: 'imobiliarioFamiliar2/lista'
+    LISTA_IMOVEL: 'imobiliarioFamiliar2/lista',
+    VISUALIZAR_IMOVEL: 'imobiliarioFamiliar/visualizar',
+    GET_ISAD: 'imobiliarioFamiliar/getIsad'
 };
 
 export const MENSAGENS_ENUMERACAO = {
@@ -14,7 +16,6 @@ export const MENSAGENS_ENUMERACAO = {
 
 /**
  * Centralização dos seletores HTML da tela de impressão do SIGSS.
- * Permite manutenção rápida em um único ponto caso IDs ou classes do SIGSS sejam alterados.
  */
 export const SELETORES_INPUT_SIGSS = [
     'input[name*="codigoSigss"]',
@@ -34,16 +35,22 @@ export const SELETORES_INPUT_SIGSS = [
 ];
 
 /**
- * Mapeamento de Código ESF para sufixo de Equipe
+ * Mapeamento de Código ESF / Código de Área para sufixo de Equipe
  */
 export const MAPEAMENTO_EQUIPES = {
     '085': '01',
     '086': '03',
-    '087': '02'
+    '087': '02',
+    '0085': '01',
+    '0086': '03',
+    '0087': '02',
+    '85': '01',
+    '86': '03',
+    '87': '02'
 };
 
 /**
- * Definição completa das Equipes, Microáreas e seus códigos de busca
+ * Definição completa das Equipes, Microáreas e seus códigos de busca (Fallback/Referência)
  */
 export const EQUIPES_CONFIG = [
     {
