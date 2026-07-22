@@ -2,6 +2,15 @@
 
 Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 
+## [0.4.1] - 2026-07-22 (RC-1)
+
+### Adicionado
+- Primeira versão Release Candidate (RC-1) destinada aos testes e homologação em ambiente real na UBS.
+- Módulo `src/logger.js` e constante `DEBUG_MODE` em `src/constants.js` para controle centralizado de depuração sem `console.log` dispersos.
+- Documento de homologação em campo [`docs/TESTE_REAL.md`](docs/TESTE_REAL.md) contendo instruções e checklist completo para execução na UBS.
+- Auditoria estática e técnica completa do código e do pipeline de impressão.
+- Sem novas funcionalidades ou alterações de arquitetura.
+
 ## [0.4.0] - 2026-07-22
 
 ### Adicionado

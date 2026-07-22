@@ -4,6 +4,14 @@
 
 ---
 
+## 🔬 Fase de Homologação em Ambiente Real (v0.4.1 - RC-1)
+
+O **SIGSS-AutoIndex** concluiu todas as etapas de desenvolvimento de arquitetura e pipeline (v0.1.0 a v0.4.0) e entrou oficialmente na fase de **Homologação e Validação Prática em Ambiente Real** nas Unidades Básicas de Saúde (UBS) do município de Betim.
+
+Para orientações sobre a instalação e execução do teste em campo, consulte o [**Guia de Homologação e Teste Real (docs/TESTE_REAL.md)**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/TESTE_REAL.md).
+
+---
+
 ## 🎯 Objetivo
 
 O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos (FAA) a identificação completa da equipe, microárea, número de família e sufixo de equipe (ex: `086_03_018_03`), eliminando qualquer necessidade de preenchimento manual ou alteração na rotina dos médicos e profissionais de saúde.
@@ -18,9 +26,9 @@ O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos 
 
 ---
 
-## 🚀 Pipeline Inteligente de Impressão (Versão 0.4.0)
+## 🚀 Pipeline Inteligente de Impressão
 
-A partir da versão 0.4.0, toda a orquestração do fluxo de impressão é gerenciada de forma desacoplada pelo módulo `src/pipeline.js`:
+Toda a orquestração do fluxo de impressão é gerenciada pelo módulo `src/pipeline.js`:
 
 ```
 1. Médico clica em "Imprimir" no SIGSS
@@ -41,20 +49,10 @@ A partir da versão 0.4.0, toda a orquestração do fluxo de impressão é geren
 
 ---
 
-## 🛡️ Tratamento de Falhas e Cenários de Resultado
-
-| Cenário | Comportamento do SIGSS-AutoIndex |
-| :--- | :--- |
-| **1. Paciente Encontrado** | Carimba a string oficial (ex: `086_03_018_03`) no topo centralizado do PDF. |
-| **2. Paciente Não Encontrado** | Carimba a mensagem `"Não encontrado em imóvel"` no topo do PDF. |
-| **3. Múltiplos Imóveis** | Carimba a mensagem `"Múltiplos imóveis encontrados"` no topo do PDF. |
-| **4. Erro de Rede ou Parse** | Abre automaticamente o **PDF original** sem travar o médico ou o navegador. |
-
----
-
 ## 📚 Documentação Técnica
 
 Disponível no diretório [`docs/`](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs):
+- [**docs/TESTE_REAL.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/TESTE_REAL.md): Checklist e guia passo a passo para testes na UBS.
 - [**docs/arquitetura.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/arquitetura.md): Visão geral dos módulos e responsabilidade única.
 - [**docs/fluxo.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/fluxo.md): Detalhamento passo a passo do fluxo e fallback.
 - [**docs/depuracao.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/depuracao.md): Guia de diagnósticos e inspeção de logs no DevTools.
@@ -70,11 +68,12 @@ SIGSS-AutoIndex/
 ├── README.md           # Documentação técnica principal
 ├── CHANGELOG.md        # Histórico de alterações por versão
 ├── CONFIG.md           # Guia de configuração de constantes e endpoints
-├── docs/               # Documentação técnica detalhada (arquitetura, fluxo, depuração)
+├── docs/               # Documentação técnica (arquitetura, fluxo, depuração, teste real)
 ├── lib/
 │   └── pdf-lib.min.js  # Biblioteca pdf-lib para edição de PDF em memória
 └── src/
-    ├── constants.js    # Endpoints, seletores HTML e tabela de equipes/ESF
+    ├── constants.js    # Endpoints, DEBUG_MODE, seletores HTML e equipes/ESF
+    ├── logger.js       # Logger centralizado desacoplado (debug, info, warn, error)
     ├── equipes.js      # Utilitários de sufixo de equipe
     ├── utils.js        # Obtenção do Código SIGSS (Prioridade Input → PDF)
     ├── imovel.js       # Integração imobiliária encadeada (lista -> visualizar -> getIsad)
@@ -106,6 +105,7 @@ SIGSS-AutoIndex/
 - [x] **v0.2.0**: Leitura automática do Código SIGSS com prioridade estrita (Input → Documento/PDF).
 - [x] **v0.3.0**: Integração imobiliária do SIGSS através da cadeia validada (`lista → visualizar → getIsad`).
 - [x] **v0.4.0**: Pipeline de Impressão Inteligente com carimbo de PDF em memória e política de fallback.
+- [x] **v0.4.1 (RC-1)**: Versão Release Candidate 1 destinada à validação prática em ambiente real da UBS.
 
 ---
 

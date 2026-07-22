@@ -1,6 +1,11 @@
 /**
- * Constantes globais do sistema SIGSS-AutoIndex (v0.3.0)
+ * Constantes globais do sistema SIGSS-AutoIndex (v0.4.1 - RC-1)
  */
+
+/**
+ * Modo de depuração. Quando true, ativa logs detalhados de cada etapa do pipeline.
+ */
+export const DEBUG_MODE = false;
 
 export const ENDPOINTS = {
     IMPRIMIR_FAA: 'atendimentoConsulta/imprimirFAA',
@@ -50,7 +55,7 @@ export const MAPEAMENTO_EQUIPES = {
 };
 
 /**
- * Definição completa das Equipes, Microáreas e seus códigos de busca (Fallback/Referência)
+ * Definição completa das Equipes, Microáreas e seus códigos de busca
  */
 export const EQUIPES_CONFIG = [
     {

@@ -1,8 +1,9 @@
 import { MENSAGENS_ENUMERACAO } from './constants.js';
 import { getSufixoEquipePorESF } from './equipes.js';
+import { Logger } from './logger.js';
 
 /**
- * Módulo de Formatação de Enumeração - Sprint v0.4.0
+ * Módulo de Formatação de Enumeração - SIGSS-AutoIndex (v0.4.1)
  * 
  * Responsabilidade Única: Transformar os dados cadastrais do imóvel na string oficial de enumeração.
  */
@@ -10,18 +11,17 @@ import { getSufixoEquipePorESF } from './equipes.js';
 /**
  * Formata os dados do imóvel na enumeração oficial do SIGSS-AutoIndex.
  * 
- * Exemplo de Entrada: { areaCod: "0086", miarCod: "03", familia: "018" } ou { status: "NAO_ENCONTRADO" }
+ * Exemplo de Entrada: { areaCod: "0086", miarCod: "03", isadNumFamiliaSiab: "018" } ou "Não encontrado em imóvel"
  * Exemplo de Saída: "086_03_018_03" ou "Não encontrado em imóvel"
  * 
- * @param {Object} dados - Objeto contendo os dados do imóvel ou status
- * @returns {string} String formatada da enumeração
+ * @param {Object|string} dados 
+ * @returns {string}
  */
 export function formatarEnumeracao(dados) {
     if (!dados) {
         return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
     }
 
-    // Se for uma mensagem ou status de resultado pré-definido
     if (typeof dados === 'string') {
         return dados;
     }
@@ -56,11 +56,13 @@ export function formatarEnumeracao(dados) {
         // 4. Sufixo da Equipe obtido pelo mapeamento (ex: "086" -> "03")
         const sufixoEquipe = getSufixoEquipePorESF(codigoEquipeFormatado) || '01';
 
-        // Formato oficial: CódigoEquipe_Micro_NúmeroFamília_NúmeroEquipe
-        return `${codigoEquipeFormatado}_${microAreaFormatada}_${numeroFamiliaFormatado}_${sufixoEquipe}`;
+        const enumeracaoFinal = `${codigoEquipeFormatado}_${microAreaFormatada}_${numeroFamiliaFormatado}_${sufixoEquipe}`;
+        Logger.debug(`Formatação concluída: areaCod=${areaRaw}, miarCod=${miarRaw}, familia=${familiaRaw} => ${enumeracaoFinal}`);
+        
+        return enumeracaoFinal;
 
     } catch (e) {
-        console.error('[SIGSS-AutoIndex] Erro ao formatar enumeração:', e);
+        Logger.error('Erro ao formatar enumeração:', e);
         return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
     }
 }

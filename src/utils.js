@@ -1,55 +1,52 @@
 import { SELETORES_INPUT_SIGSS } from './constants.js';
+import { Logger } from './logger.js';
 
 /**
- * Módulo de Utilitários - Sprint v0.2.0
+ * Módulo de Utilitários - SIGSS-AutoIndex (v0.4.1)
  * 
- * Responsável exclusivamente pela obtenção do Código SIGSS.
+ * Responsável pela obtenção do Código SIGSS (Prioridade 1: Input -> Prioridade 2: Documento/PDF).
  */
 
 /**
  * Obtém o Código SIGSS a ser utilizado como chave única de busca.
  * 
- * Ordem obrigatória de prioridade:
- * PRIORIDADE 1: Ler diretamente do campo INPUT existente na tela do SIGSS.
- * PRIORIDADE 2: Ler através do documento/PDF (caso o input não exista ou esteja vazio).
- * 
- * @param {string|null} [urlReport=null] - URL do relatório PDF retornado pelo SIGSS
- * @returns {Promise<string|null>} Retorna estritamente uma string (ex: "82828-1") ou null em caso de falha.
+ * @param {string|null} [urlReport=null] 
+ * @returns {Promise<string|null>}
  */
 export async function obterCodigoSIGSS(urlReport = null) {
     try {
         // PRIORIDADE 1: Leitura do campo INPUT da tela do SIGSS
         const codigoDoInput = lerCodigoDoInputTela();
         if (codigoDoInput) {
+            Logger.debug('Código SIGSS obtido via Input da tela:', codigoDoInput);
             return codigoDoInput;
         }
 
         // PRIORIDADE 2: Leitura do Documento/PDF (somente se input não forneceu valor)
         if (urlReport) {
+            Logger.debug('Input vazio/ausente. Tentando extração do Código SIGSS via PDF...');
             const codigoDoPdf = await lerCodigoDoDocumentoPdf(urlReport);
             if (codigoDoPdf) {
+                Logger.debug('Código SIGSS obtido via parse do PDF:', codigoDoPdf);
                 return codigoDoPdf;
             }
         }
 
-        // Retorna null caso nenhum código seja localizado em ambas as tentativas
+        Logger.debug('Nenhum Código SIGSS localizado.');
         return null;
     } catch (erro) {
-        console.error('[SIGSS+] Erro silencioso durante obtenção do Código SIGSS:', erro);
+        Logger.error('Erro silencioso durante obtenção do Código SIGSS:', erro);
         return null;
     }
 }
 
-/**
- * Busca o valor do campo input na DOM da tela de impressão do SIGSS.
- * Utiliza os seletores centralizados em constants.js.
- * 
- * @returns {string|null}
- */
 function lerCodigoDoInputTela() {
     try {
+        const doc = typeof document !== 'undefined' ? document : null;
+        if (!doc) return null;
+
         for (const seletor of SELETORES_INPUT_SIGSS) {
-            const elemento = document.querySelector(seletor);
+            const elemento = doc.querySelector(seletor);
             if (elemento && typeof elemento.value === 'string') {
                 const valorTratado = elemento.value.trim();
                 if (valorTratado.length > 0) {
@@ -63,12 +60,6 @@ function lerCodigoDoInputTela() {
     }
 }
 
-/**
- * Baixa e analisa o documento PDF para extrair o Código SIGSS via expressão regular.
- * 
- * @param {string} urlReport 
- * @returns {Promise<string|null>}
- */
 async function lerCodigoDoDocumentoPdf(urlReport) {
     try {
         const response = await fetch(urlReport);
@@ -79,8 +70,6 @@ async function lerCodigoDoDocumentoPdf(urlReport) {
         const arrayBuffer = await response.arrayBuffer();
         const textoDecodificado = new TextDecoder('iso-8859-1').decode(arrayBuffer);
 
-        // Busca por padrões numéricos típicos do Código SIGSS ou FAA no texto do PDF
-        // Exemplos: 82828-1, Prontuário: 82828-1, Código SIGSS: 82828
         const padroes = [
             /(?:código\s*sigss|cod\.?\s*sigss|prontuário|faa|isenCod)[\s:]*([0-9]{4,10}(?:-[0-9]{1,2})?)/i,
             /\b([0-9]{5,10}-[0-9]{1,2})\b/,

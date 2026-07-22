@@ -1,16 +1,12 @@
+import { Logger } from './logger.js';
+
 /**
- * Módulo de Manipulação de PDF em Memória - Sprint v0.4.0
+ * Módulo de Manipulação de PDF em Memória - SIGSS-AutoIndex (v0.4.1)
  * 
  * Baixa o PDF do relatório SIGSS, adiciona a linha de enumeração no topo centralizado
  * inteiramente em memória sem salvar arquivos locais e abre a janela com o PDF modificado.
  */
 
-/**
- * Baixa o PDF original como ArrayBuffer em memória.
- * 
- * @param {string} urlPdfOriginal 
- * @returns {Promise<ArrayBuffer>}
- */
 export async function baixarPdf(urlPdfOriginal) {
     const response = await fetch(urlPdfOriginal);
     if (!response.ok) {
@@ -19,13 +15,6 @@ export async function baixarPdf(urlPdfOriginal) {
     return await response.arrayBuffer();
 }
 
-/**
- * Edita o PDF em memória inserindo a linha de enumeração no topo centralizado.
- * 
- * @param {ArrayBuffer} arrayBuffer - Conteúdo bruto do PDF original
- * @param {string} textoEnumeracao - String da enumeração (ex: "086_03_018_03")
- * @returns {Promise<ArrayBuffer>} ArrayBuffer do PDF modificado
- */
 export async function editarPdf(arrayBuffer, textoEnumeracao) {
     const pdfLib = (typeof window !== 'undefined' && window.PDFLib) || (typeof global !== 'undefined' && global.PDFLib);
     if (!pdfLib) {
@@ -46,37 +35,31 @@ export async function editarPdf(arrayBuffer, textoEnumeracao) {
         const x = (width - textWidth) / 2; // Centralizado horizontalmente
         const y = height - 18; // Topo da página, acima do cabeçalho original
 
-        // Inserção do texto com destaque suficiente
         primeiraPagina.drawText(textoEnumeracao, {
             x: x,
             y: y,
             size: fontSize,
             font: font,
-            color: rgb(0, 0.1, 0.4) // Azul escuro destacado para organização física
+            color: rgb(0, 0.1, 0.4) // Azul escuro destacado
         });
+        Logger.debug(`Texto "${textoEnumeracao}" desenhado no PDF na posição x=${x.toFixed(1)}, y=${y.toFixed(1)}.`);
     }
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes.buffer;
 }
 
-/**
- * Converte o ArrayBuffer do PDF modificado em Blob/ObjectURL em memória e abre em nova janela.
- * 
- * @param {ArrayBuffer} arrayBufferModificado 
- * @param {Function} windowOpenOriginal 
- * @returns {Window|null}
- */
 export function abrirPdf(arrayBufferModificado, windowOpenOriginal) {
     const blob = new Blob([arrayBufferModificado], { type: 'application/pdf' });
     const blobUrl = URL.createObjectURL(blob);
 
-    const openFn = windowOpenOriginal || window.open;
-    const novaJanela = openFn(blobUrl, '_blank');
+    const openFn = windowOpenOriginal || (typeof window !== 'undefined' ? window.open : null);
+    const novaJanela = openFn ? openFn(blobUrl, '_blank') : null;
 
-    // Descarte do ObjectURL em memória após a abertura da janela
+    // Descarte do ObjectURL em memória após 60 segundos
     setTimeout(() => {
         URL.revokeObjectURL(blobUrl);
+        Logger.debug('ObjectURL revogado da memória:', blobUrl);
     }, 60000);
 
     return novaJanela;

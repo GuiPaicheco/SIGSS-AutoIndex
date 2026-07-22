@@ -1,33 +1,32 @@
 import { ENDPOINTS, MENSAGENS_ENUMERACAO } from './constants.js';
 import { getSufixoEquipePorESF } from './equipes.js';
+import { Logger } from './logger.js';
 
 /**
- * Módulo de Integração Imobiliária do SIGSS (Sprint v0.3.0)
+ * Módulo de Integração Imobiliária do SIGSS (v0.4.1 - RC-1)
  * 
- * Implementa a cadeia técnica validada:
+ * Implementa a cadeia técnica:
  * imobiliarioFamiliar2/lista -> imobiliarioFamiliar/visualizar -> imobiliarioFamiliar/getIsad
  */
 
-/**
- * Função principal que orquestra a cadeia de chamadas imobiliárias.
- * 
- * @param {string} codigoSigss - Código SIGSS obtido do prontuário ou tela
- * @returns {Promise<string>} String formatada da enumeração ou mensagem correspondente
- */
 export async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
     if (!codigoSigss) {
         return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
     }
 
     try {
+        Logger.debug('Iniciando busca imobiliária para Código SIGSS:', codigoSigss);
+
         // 1. Pesquisa na lista de imóveis pelo Código SIGSS
         const resultadoLista = await buscarImovelPorCodigoSigss(codigoSigss);
 
         if (resultadoLista.status === 'NAO_ENCONTRADO') {
+            Logger.debug('Resultado da lista: Nenhum imóvel localizado.');
             return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
         }
 
         if (resultadoLista.status === 'MULTIPLOS_ENCONTRADOS') {
+            Logger.debug('Resultado da lista: Múltiplos imóveis localizados.');
             return MENSAGENS_ENUMERACAO.MULTIPLOS_ENCONTRADOS;
         }
 
@@ -35,33 +34,29 @@ export async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
             return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
         }
 
-        // 2. Chama o endpoint de visualização do imóvel para obter isadPK (idp e ids)
+        // 2. Chama o endpoint de visualização do imóvel para obter isadPK
         const isadPK = await visualizarImovel(resultadoLista.imovPK);
         if (!isadPK) {
+            Logger.debug('Falha ao obter isadPK via visualizarImovel.');
             return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
         }
 
         // 3. Chama o endpoint getIsad para obter os dados oficiais de área, microárea e número da família
         const dadosIsad = await obterDadosIsad(isadPK);
         if (!dadosIsad) {
+            Logger.debug('Falha ao obter dados cadastrais via getIsad.');
             return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
         }
 
-        // 4. Monta e retorna a string de enumeração final (ex: 086_03_018_03)
-        return montarCodigoFinal(dadosIsad);
+        Logger.debug('Dados ISAD recuperados com sucesso:', dadosIsad);
+        return dadosIsad;
 
     } catch (erro) {
-        console.error('[SIGSS+] Erro na integração imobiliária:', erro);
+        Logger.error('Erro durante a integração imobiliária:', erro);
         return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
     }
 }
 
-/**
- * Passo 1: Busca o imóvel pelo Código SIGSS na API imobiliarioFamiliar2/lista.
- * 
- * @param {string} codigoSigss 
- * @returns {Promise<{status: string, imovPK?: {idp: string|number, ids: string|number}}>}
- */
 export async function buscarImovelPorCodigoSigss(codigoSigss) {
     try {
         const params = new URLSearchParams({
@@ -77,7 +72,6 @@ export async function buscarImovelPorCodigoSigss(codigoSigss) {
 
         const data = await response.json();
 
-        // Quantidade de registros
         const totalRecords = typeof data.records !== 'undefined' 
             ? Number(data.records) 
             : (Array.isArray(data.rows) ? data.rows.length : 0);
@@ -90,13 +84,11 @@ export async function buscarImovelPorCodigoSigss(codigoSigss) {
             return { status: 'MULTIPLOS_ENCONTRADOS' };
         }
 
-        // Registro único encontrado
         const primeiraLinha = data.rows && data.rows[0];
         if (!primeiraLinha) {
             return { status: 'NAO_ENCONTRADO' };
         }
 
-        // Extrai imovPK.idp e imovPK.ids
         const imovPK = extrairImovPK(primeiraLinha);
         if (!imovPK) {
             return { status: 'NAO_ENCONTRADO' };
@@ -109,12 +101,6 @@ export async function buscarImovelPorCodigoSigss(codigoSigss) {
     }
 }
 
-/**
- * Passo 2: Envia requisição POST para imobiliarioFamiliar/visualizar para extrair isadPK.idp e isadPK.ids.
- * 
- * @param {{idp: string|number, ids: string|number}} imovPK 
- * @returns {Promise<{idp: string|number, ids: string|number}|null>}
- */
 export async function visualizarImovel(imovPK) {
     try {
         const formData = new URLSearchParams();
@@ -137,12 +123,6 @@ export async function visualizarImovel(imovPK) {
     }
 }
 
-/**
- * Passo 3: Envia requisição POST para imobiliarioFamiliar/getIsad usando isadPK.idp e isadPK.ids.
- * 
- * @param {{idp: string|number, ids: string|number}} isadPK 
- * @returns {Promise<{areaCod: string, miarCod: string, isadNumFamiliaSiab: string}|null>}
- */
 export async function obterDadosIsad(isadPK) {
     try {
         const formData = new URLSearchParams();
@@ -178,32 +158,16 @@ export async function obterDadosIsad(isadPK) {
     }
 }
 
-/**
- * Passo 4: Monta o código final formatado (ex: 086_03_018_03).
- * 
- * @param {{areaCod: string, miarCod: string, isadNumFamiliaSiab: string}} dadosIsad 
- * @returns {string}
- */
 export function montarCodigoFinal(dadosIsad) {
-    // Trata e padroniza o código da área/ESF para exatamente 3 dígitos (ex: "0086" ou "86" -> "086")
     const areaNumerica = dadosIsad.areaCod.replace(/\D/g, '');
     const codigoEquipeFormatado = areaNumerica.slice(-3).padStart(3, '0');
-
-    // Trata a microárea (ex: "3" -> "03")
     const microAreaFormatada = dadosIsad.miarCod.padStart(2, '0');
-
-    // Trata o número da família (ex: "18" -> "018")
     const numeroFamiliaFormatado = dadosIsad.isadNumFamiliaSiab.padStart(3, '0');
-
-    // Obtém o sufixo numérico da equipe a partir do mapeamento mantido em constants.js
     const sufixoEquipe = getSufixoEquipePorESF(codigoEquipeFormatado) || '01';
 
     return `${codigoEquipeFormatado}_${microAreaFormatada}_${numeroFamiliaFormatado}_${sufixoEquipe}`;
 }
 
-/**
- * Função auxiliar para extrair imovPK (idp e ids) a partir da linha retornada da lista.
- */
 function extrairImovPK(linha) {
     if (linha.imovPK && typeof linha.imovPK.idp !== 'undefined' && typeof linha.imovPK.ids !== 'undefined') {
         return { idp: linha.imovPK.idp, ids: linha.imovPK.ids };
@@ -212,11 +176,9 @@ function extrairImovPK(linha) {
         return { idp: linha.idp, ids: linha.ids };
     }
     if (Array.isArray(linha.cell)) {
-        // Fallback caso venha na estrutura jqGrid clássica do SIGSS
         return { idp: linha.cell[0], ids: linha.cell[1] };
     }
     if (linha.id) {
-        // Se id for uma string composta tipo "123_456"
         const partes = String(linha.id).split('_');
         if (partes.length >= 2) {
             return { idp: partes[0], ids: partes[1] };
@@ -225,9 +187,6 @@ function extrairImovPK(linha) {
     return null;
 }
 
-/**
- * Função auxiliar para extrair isadPK (idp e ids) do objeto retornado de visualizar.
- */
 function extrairIsadPK(data) {
     if (data.isadPK && typeof data.isadPK.idp !== 'undefined' && typeof data.isadPK.ids !== 'undefined') {
         return { idp: data.isadPK.idp, ids: data.isadPK.ids };
