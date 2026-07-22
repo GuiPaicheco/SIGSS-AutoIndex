@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "SIGSS+",
+  "version": "0.1.0",
+  "description": "Automação totalmente transparente da enumeração dos prontuários emitidos pelo SIGSS (Prefeitura de Betim).",
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.betim.mg.gov.br/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": [
+        "lib/pdf-lib.min.js",
+        "src/interceptor.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "lib/pdf-lib.min.js",
+        "src/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "permissions": []
+}
