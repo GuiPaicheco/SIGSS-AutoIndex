@@ -1,4 +1,4 @@
-import { obterCodigoSigss } from './utils.js';
+import { obterCodigoSIGSS } from './utils.js';
 import { pesquisarImovelEGerarEnumeracao } from './imovel.js';
 import { processarEExibirPdf } from './pdf.js';
 
@@ -18,9 +18,6 @@ export function inicializarSigssPlus() {
 /**
  * Fluxo executado quando o médico clica em imprimir e a resposta do relatório é recebida.
  * 
- * Flow:
- * SIGSS -> POST atendimentoConsulta/imprimirFAA -> Receber json.report -> Obter Código SIGSS -> Pesquisar imóvel -> Gerar enumeração -> Inserir enumeração no PDF -> Abrir PDF modificado
- * 
  * @param {string} urlReport 
  * @param {string} windowName 
  * @param {string} windowSpecs 
@@ -30,8 +27,8 @@ async function executarFluxoImpressao(urlReport, windowName, windowSpecs, window
     try {
         console.log('[SIGSS+] Iniciando fluxo de automação transparente...');
 
-        // 1. Obter Código SIGSS (Prontuário ou campo input da tela)
-        const codigoSigss = obterCodigoSigss();
+        // 1. Obter Código SIGSS (Prioridade 1: Input da tela; Prioridade 2: Documento PDF)
+        const codigoSigss = await obterCodigoSIGSS(urlReport);
         console.log('[SIGSS+] Código SIGSS identificado:', codigoSigss);
 
         // 2. Pesquisar imóvel e gerar a linha de enumeração

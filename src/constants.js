@@ -13,6 +13,27 @@ export const MENSAGENS_ENUMERACAO = {
 };
 
 /**
+ * Centralização dos seletores HTML da tela de impressão do SIGSS.
+ * Permite manutenção rápida em um único ponto caso IDs ou classes do SIGSS sejam alterados.
+ */
+export const SELETORES_INPUT_SIGSS = [
+    'input[name*="codigoSigss"]',
+    'input[name*="codSigss"]',
+    'input[id*="codigoSigss"]',
+    'input[id*="codSigss"]',
+    'input[name*="isenCod"]',
+    'input[id*="isenCod"]',
+    'input[name*="prontuario"]',
+    'input[id*="prontuario"]',
+    'input[name*="codigoFaa"]',
+    'input[id*="codigoFaa"]',
+    '#codigoSigss',
+    '#codSigss',
+    '#isenCod',
+    '#prontuario'
+];
+
+/**
  * Mapeamento de Código ESF para sufixo de Equipe
  */
 export const MAPEAMENTO_EQUIPES = {

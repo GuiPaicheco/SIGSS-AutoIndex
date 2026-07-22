@@ -2,6 +2,15 @@
 
 Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 
+## [0.2.0] - 2026-07-22
+
+### Adicionado
+- Implementada leitura automática do Código SIGSS.
+- Prioridade de leitura estrita: Input da tela -> Documento/PDF.
+- Centralização dos seletores de input HTML no arquivo `src/constants.js`.
+- Função resiliente `obterCodigoSIGSS` retornando estritamente string ou `null` sem lançar exceções.
+- Garantia de que nenhuma alteração foi feita no fluxo do usuário, sem cache e sem armazenamento local.
+
 ## [0.1.0] - 2026-07-22
 
 ### Adicionado
