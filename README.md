@@ -4,46 +4,43 @@
 
 ---
 
-## 🔬 Versão de Diagnóstico de Campo (v0.4.3-debug - RC-1.2)
+## 🛠️ Correção Arquitetural do Bootstrap (v0.4.4 - RC-1.3)
 
-A versão **v0.4.3-debug** introduz **instrumentação completa linha a linha** com mensagens explícitas de `console.info` (01 a 22) para rastreamento exato do ponto de execução no ambiente real do SIGSS.
+A versão **v0.4.4** reestrutura completamente a injeção dos scripts da extensão. A solução anterior baseada em `chrome.runtime.getURL` em `document.createElement('script')` executando dentro do contexto `world: "MAIN"` dependia de APIs de extensão indisponíveis para scripts de páginas nativas no Google Chrome.
 
-### Sequência Rastreável de Logs no DevTools Console:
+Na v0.4.4, a injeção passa a ser realizada **diretamente pelo Manifest V3 do Chrome** declarando a sequência ordenada de scripts no array `content_scripts.js` com `"world": "MAIN"` e `"run_at": "document_start"`:
 
 ```
-[SIGSS] 01 - interceptor.js carregado
-[SIGSS] 02 - window.open interceptado
-[SIGSS] 03 - registrador criado
-[SIGSS] 04 - iniciando bootstrap
-[SIGSS] 05 - script module criado
-[SIGSS] 06 - script anexado à DOM
-[SIGSS] 07 - main.js carregado
-[SIGSS] 08 - entrou em main.js
-[SIGSS] 09 - pipeline importado
-[SIGSS] 10 - inicializando
-[SIGSS] 11 - registrando handler
-[SIGSS] Handler recebido
-[SIGSS] 12 - handler registrado
-[SIGSS] 13 - window.executarFluxoImpressao definido
-[SIGSS] 14 - main.js finalizado
-[SIGSS] OPEN chamado <URL>
-[SIGSS] callback = function
-[SIGSS] entrando no Pipeline
-[SIGSS] 15 - pipeline carregado
-[SIGSS] 16 - pipeline iniciado
-[SIGSS] 17 - obtendo código SIGSS
-[SIGSS] 18 - pesquisando imóvel
-[SIGSS] 19 - formatando enumeração
-[SIGSS] 20 - editando PDF
-[SIGSS] 21 - abrindo PDF
-[SIGSS] 22 - pipeline concluído
+Chrome Manifest V3 (document_start em MAIN world)
+       │
+       ├── 1. lib/pdf-lib.min.js
+       ├── 2. src/constants.js
+       ├── 3. src/logger.js
+       ├── 4. src/equipes.js
+       ├── 5. src/utils.js
+       ├── 6. src/imovel.js
+       ├── 7. src/formatter.js
+       ├── 8. src/pdf.js
+       ├── 9. src/pipeline.js
+       ├── 10. src/interceptor.js  (Instala hooks transparentes e registrador)
+       └── 11. src/main.js         (Registra handler e expõe window.executarFluxoImpressao)
 ```
+
+Essa arquitetura é 100% determinística, funciona nativamente sem requisições de rede para a extensão e garante que a variável `callbackImpressaoInterceptada` receba a referência da função `executarFluxoImpressao`.
 
 ---
 
 ## 🎯 Objetivo
 
 O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos (FAA) a identificação completa da equipe, microárea, número de família e sufixo de equipe (ex: `086_03_018_03`), eliminando qualquer necessidade de preenchimento manual ou alteração na rotina dos médicos e profissionais de saúde.
+
+### Princípios Inegociáveis
+
+- **Zero armazenamento**: Não cria banco de dados, não cria cache e não salva arquivos locais.
+- **Zero interferência na UI**: Nenhum botão adicionado, nenhuma tela modificada, nenhuma caixa de confirmação.
+- **Zero alteração de fluxo**: O médico continua realizando a mesma sequência habitual (Abrir atendimento → Finalizar atendimento → Imprimir).
+- **Execução 100% em memória**: Toda informação existe apenas em memória durante o processo de impressão e é totalmente descartada ao finalizar.
+- **Resiliência Crítica (Fallback Garantido)**: Se ocorrer qualquer falha no pipeline, o PDF original sem modificações é aberto automaticamente para o médico.
 
 ---
 
@@ -67,8 +64,9 @@ O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos 
 - [x] **v0.3.0**: Integração imobiliária do SIGSS através da cadeia validada (`lista → visualizar → getIsad`).
 - [x] **v0.4.0**: Pipeline de Impressão Inteligente com carimbo de PDF em memória e política de fallback.
 - [x] **v0.4.1 (RC-1)**: Primeira versão Release Candidate destinada à homologação.
-- [x] **v0.4.2 (RC-1.1)**: Correção do bootstrap de inicialização dos módulos ES6.
-- [x] **v0.4.3-debug (RC-1.2)**: Instrumentação completa de execução linha a linha para diagnóstico de campo.
+- [x] **v0.4.2 (RC-1.1)**: Correção do bootstrap de inicialização.
+- [x] **v0.4.3-debug (RC-1.2)**: Instrumentação completa de execução linha a linha.
+- [x] **v0.4.4 (RC-1.3)**: Reestruturação arquitetural do Bootstrap via injeção direta no `manifest.json`.
 
 ---
 

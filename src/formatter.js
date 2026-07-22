@@ -4,8 +4,11 @@ import { MENSAGENS_ENUMERACAO } from './constants.js';
 import { getSufixoEquipePorESF } from './equipes.js';
 
 export function formatarEnumeracao(dados) {
+    const msgs = (typeof window !== 'undefined' && window.MENSAGENS_ENUMERACAO) || MENSAGENS_ENUMERACAO;
+    const fnSufixo = (typeof window !== 'undefined' && window.getSufixoEquipePorESF) || getSufixoEquipePorESF;
+
     if (!dados) {
-        return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+        return msgs.NAO_ENCONTRADO;
     }
 
     if (typeof dados === 'string') {
@@ -13,11 +16,11 @@ export function formatarEnumeracao(dados) {
     }
 
     if (dados.status === 'NAO_ENCONTRADO') {
-        return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+        return msgs.NAO_ENCONTRADO;
     }
 
     if (dados.status === 'MULTIPLOS_ENCONTRADOS') {
-        return MENSAGENS_ENUMERACAO.MULTIPLOS_ENCONTRADOS;
+        return msgs.MULTIPLOS_ENCONTRADOS;
     }
 
     try {
@@ -26,19 +29,23 @@ export function formatarEnumeracao(dados) {
         const familiaRaw = dados.familia || dados.isadNumFamiliaSiab || dados.numeroFamilia || '';
 
         if (!areaRaw || !miarRaw || !familiaRaw) {
-            return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+            return msgs.NAO_ENCONTRADO;
         }
 
         const areaNumerica = String(areaRaw).replace(/\D/g, '');
         const codigoEquipeFormatado = areaNumerica.slice(-3).padStart(3, '0');
         const microAreaFormatada = String(miarRaw).replace(/\D/g, '').padStart(2, '0');
         const numeroFamiliaFormatado = String(familiaRaw).replace(/\D/g, '').padStart(3, '0');
-        const sufixoEquipe = getSufixoEquipePorESF(codigoEquipeFormatado) || '01';
+        const sufixoEquipe = fnSufixo(codigoEquipeFormatado) || '01';
 
         return `${codigoEquipeFormatado}_${microAreaFormatada}_${numeroFamiliaFormatado}_${sufixoEquipe}`;
 
     } catch (e) {
         console.error('[SIGSS] Erro em formatarEnumeracao:', e);
-        return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+        return msgs.NAO_ENCONTRADO;
     }
+}
+
+if (typeof window !== 'undefined') {
+    window.formatarEnumeracao = formatarEnumeracao;
 }

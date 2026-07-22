@@ -105,40 +105,5 @@ console.info("[SIGSS] 01 - interceptor.js carregado");
         };
     }
 
-    /**
-     * Bootstrap dinâmico (Etapa 1)
-     */
-    function injetarMainModule() {
-        console.info("[SIGSS] 04 - iniciando bootstrap");
-        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
-            if (!document.querySelector('script[data-sigss-autoindex-main]')) {
-                const script = document.createElement('script');
-                script.type = 'module';
-                script.src = chrome.runtime.getURL('src/main.js');
-                script.setAttribute('data-sigss-autoindex-main', 'true');
-                console.info("[SIGSS] 05 - script module criado");
-
-                script.onload = () => {
-                    console.info("[SIGSS] 07 - main.js carregado");
-                };
-
-                script.onerror = (e) => {
-                    console.error("[SIGSS] ERRO carregando main.js", e);
-                };
-
-                const alvo = document.head || document.documentElement;
-                if (alvo) {
-                    alvo.appendChild(script);
-                    console.info("[SIGSS] 06 - script anexado à DOM");
-                } else {
-                    document.addEventListener('DOMContentLoaded', function () {
-                        (document.head || document.documentElement).appendChild(script);
-                        console.info("[SIGSS] 06 - script anexado à DOM (DOMContentLoaded)");
-                    });
-                }
-            }
-        }
-    }
-
-    injetarMainModule();
+    console.info("[SIGSS] 04 - iniciando bootstrap");
 })();

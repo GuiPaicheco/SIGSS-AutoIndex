@@ -54,3 +54,9 @@ export function abrirPdf(arrayBufferModificado, windowOpenOriginal) {
 
     return novaJanela;
 }
+
+if (typeof window !== 'undefined') {
+    window.baixarPdf = baixarPdf;
+    window.editarPdf = editarPdf;
+    window.abrirPdf = abrirPdf;
+}

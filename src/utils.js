@@ -28,7 +28,9 @@ function lerCodigoDoInputTela() {
         const doc = typeof document !== 'undefined' ? document : null;
         if (!doc) return null;
 
-        for (const seletor of SELETORES_INPUT_SIGSS) {
+        const seletores = (typeof window !== 'undefined' && window.SELETORES_INPUT_SIGSS) || SELETORES_INPUT_SIGSS;
+
+        for (const seletor of seletores) {
             const elemento = doc.querySelector(seletor);
             if (elemento && typeof elemento.value === 'string') {
                 const valorTratado = elemento.value.trim();
@@ -73,4 +75,8 @@ async function lerCodigoDoDocumentoPdf(urlReport) {
     } catch (e) {
         return null;
     }
+}
+
+if (typeof window !== 'undefined') {
+    window.obterCodigoSIGSS = obterCodigoSIGSS;
 }

@@ -9,23 +9,30 @@ export async function executarFluxoImpressao(reportUrl, windowName, windowSpecs,
     console.info("[SIGSS] 16 - pipeline iniciado");
     const fnOpen = windowOpenOriginal || window.open;
 
+    const fnObterCodigo = (typeof window !== 'undefined' && window.obterCodigoSIGSS) || obterCodigoSIGSS;
+    const fnPesquisarImovel = (typeof window !== 'undefined' && window.pesquisarImovelEGerarEnumeracao) || pesquisarImovelEGerarEnumeracao;
+    const fnFormatar = (typeof window !== 'undefined' && window.formatarEnumeracao) || formatarEnumeracao;
+    const fnBaixarPdf = (typeof window !== 'undefined' && window.baixarPdf) || baixarPdf;
+    const fnEditarPdf = (typeof window !== 'undefined' && window.editarPdf) || editarPdf;
+    const fnAbrirPdf = (typeof window !== 'undefined' && window.abrirPdf) || abrirPdf;
+
     try {
         console.info("[SIGSS] 17 - obtendo código SIGSS");
-        const codigoSigss = await obterCodigoSIGSS(reportUrl);
+        const codigoSigss = await fnObterCodigo(reportUrl);
 
         console.info("[SIGSS] 18 - pesquisando imóvel");
-        const resultadoImovel = await pesquisarImovelEGerarEnumeracao(codigoSigss);
+        const resultadoImovel = await fnPesquisarImovel(codigoSigss);
 
         console.info("[SIGSS] 19 - formatando enumeração");
-        const textoEnumeracao = formatarEnumeracao(resultadoImovel);
+        const textoEnumeracao = fnFormatar(resultadoImovel);
 
-        const pdfArrayBuffer = await baixarPdf(reportUrl);
+        const pdfArrayBuffer = await fnBaixarPdf(reportUrl);
 
         console.info("[SIGSS] 20 - editando PDF");
-        const pdfModificadoArrayBuffer = await editarPdf(pdfArrayBuffer, textoEnumeracao);
+        const pdfModificadoArrayBuffer = await fnEditarPdf(pdfArrayBuffer, textoEnumeracao);
 
         console.info("[SIGSS] 21 - abrindo PDF");
-        abrirPdf(pdfModificadoArrayBuffer, fnOpen);
+        fnAbrirPdf(pdfModificadoArrayBuffer, fnOpen);
 
         console.info("[SIGSS] 22 - pipeline concluído");
 
@@ -37,4 +44,8 @@ export async function executarFluxoImpressao(reportUrl, windowName, windowSpecs,
             console.error('[SIGSS] Erro no fallback:', eFallback);
         }
     }
+}
+
+if (typeof window !== 'undefined') {
+    window.executarFluxoImpressao = executarFluxoImpressao;
 }

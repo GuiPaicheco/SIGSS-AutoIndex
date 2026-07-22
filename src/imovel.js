@@ -4,51 +4,54 @@ import { ENDPOINTS, MENSAGENS_ENUMERACAO } from './constants.js';
 import { getSufixoEquipePorESF } from './equipes.js';
 
 export async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
+    const msgs = (typeof window !== 'undefined' && window.MENSAGENS_ENUMERACAO) || MENSAGENS_ENUMERACAO;
+
     if (!codigoSigss) {
-        return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+        return msgs.NAO_ENCONTRADO;
     }
 
     try {
         const resultadoLista = await buscarImovelPorCodigoSigss(codigoSigss);
 
         if (resultadoLista.status === 'NAO_ENCONTRADO') {
-            return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+            return msgs.NAO_ENCONTRADO;
         }
 
         if (resultadoLista.status === 'MULTIPLOS_ENCONTRADOS') {
-            return MENSAGENS_ENUMERACAO.MULTIPLOS_ENCONTRADOS;
+            return msgs.MULTIPLOS_ENCONTRADOS;
         }
 
         if (resultadoLista.status !== 'SUCESSO' || !resultadoLista.imovPK) {
-            return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+            return msgs.NAO_ENCONTRADO;
         }
 
         const isadPK = await visualizarImovel(resultadoLista.imovPK);
         if (!isadPK) {
-            return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+            return msgs.NAO_ENCONTRADO;
         }
 
         const dadosIsad = await obterDadosIsad(isadPK);
         if (!dadosIsad) {
-            return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+            return msgs.NAO_ENCONTRADO;
         }
 
         return dadosIsad;
 
     } catch (erro) {
         console.error('[SIGSS] Erro em pesquisarImovelEGerarEnumeracao:', erro);
-        return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
+        return msgs.NAO_ENCONTRADO;
     }
 }
 
 export async function buscarImovelPorCodigoSigss(codigoSigss) {
     try {
+        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || ENDPOINTS;
         const params = new URLSearchParams({
             searchField: 'isen.isenCod',
             searchString: codigoSigss
         });
 
-        const url = `${ENDPOINTS.LISTA_IMOVEL}?${params.toString()}`;
+        const url = `${endpoints.LISTA_IMOVEL}?${params.toString()}`;
         const response = await fetch(url, { method: 'GET' });
         if (!response.ok) {
             return { status: 'NAO_ENCONTRADO' };
@@ -87,11 +90,12 @@ export async function buscarImovelPorCodigoSigss(codigoSigss) {
 
 export async function visualizarImovel(imovPK) {
     try {
+        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || ENDPOINTS;
         const formData = new URLSearchParams();
         formData.append('imovPK.idp', imovPK.idp);
         formData.append('imovPK.ids', imovPK.ids);
 
-        const response = await fetch(ENDPOINTS.VISUALIZAR_IMOVEL, {
+        const response = await fetch(endpoints.VISUALIZAR_IMOVEL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
             body: formData.toString()
@@ -109,11 +113,12 @@ export async function visualizarImovel(imovPK) {
 
 export async function obterDadosIsad(isadPK) {
     try {
+        const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || ENDPOINTS;
         const formData = new URLSearchParams();
         formData.append('isadPK.idp', isadPK.idp);
         formData.append('isadPK.ids', isadPK.ids);
 
-        const response = await fetch(ENDPOINTS.GET_ISAD, {
+        const response = await fetch(endpoints.GET_ISAD, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
             body: formData.toString()
@@ -143,11 +148,12 @@ export async function obterDadosIsad(isadPK) {
 }
 
 export function montarCodigoFinal(dadosIsad) {
+    const fnSufixo = (typeof window !== 'undefined' && window.getSufixoEquipePorESF) || getSufixoEquipePorESF;
     const areaNumerica = dadosIsad.areaCod.replace(/\D/g, '');
     const codigoEquipeFormatado = areaNumerica.slice(-3).padStart(3, '0');
     const microAreaFormatada = dadosIsad.miarCod.padStart(2, '0');
     const numeroFamiliaFormatado = dadosIsad.isadNumFamiliaSiab.padStart(3, '0');
-    const sufixoEquipe = getSufixoEquipePorESF(codigoEquipeFormatado) || '01';
+    const sufixoEquipe = fnSufixo(codigoEquipeFormatado) || '01';
 
     return `${codigoEquipeFormatado}_${microAreaFormatada}_${numeroFamiliaFormatado}_${sufixoEquipe}`;
 }
@@ -182,4 +188,12 @@ function extrairIsadPK(data) {
         return { idp: data.isadIdp, ids: data.isadIds };
     }
     return null;
+}
+
+if (typeof window !== 'undefined') {
+    window.pesquisarImovelEGerarEnumeracao = pesquisarImovelEGerarEnumeracao;
+    window.buscarImovelPorCodigoSigss = buscarImovelPorCodigoSigss;
+    window.visualizarImovel = visualizarImovel;
+    window.obterDadosIsad = obterDadosIsad;
+    window.montarCodigoFinal = montarCodigoFinal;
 }

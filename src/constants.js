@@ -1,7 +1,7 @@
 console.info("[SIGSS] constants carregado");
 
 /**
- * Constantes globais do sistema SIGSS-AutoIndex (v0.4.3-debug)
+ * Constantes globais do sistema SIGSS-AutoIndex (v0.4.4)
  */
 
 export const DEBUG_MODE = true;
@@ -86,3 +86,12 @@ export const EQUIPES_CONFIG = [
         ]
     }
 ];
+
+if (typeof window !== 'undefined') {
+    window.DEBUG_MODE = DEBUG_MODE;
+    window.ENDPOINTS = ENDPOINTS;
+    window.MENSAGENS_ENUMERACAO = MENSAGENS_ENUMERACAO;
+    window.SELETORES_INPUT_SIGSS = SELETORES_INPUT_SIGSS;
+    window.MAPEAMENTO_EQUIPES = MAPEAMENTO_EQUIPES;
+    window.EQUIPES_CONFIG = EQUIPES_CONFIG;
+}
