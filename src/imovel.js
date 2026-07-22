@@ -25,11 +25,13 @@ async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
             return msgs.NAO_ENCONTRADO;
         }
 
+        console.info("[SIGSS] visualizar()");
         const isadPK = await visualizarImovel(resultadoLista.imovPK);
         if (!isadPK) {
             return msgs.NAO_ENCONTRADO;
         }
 
+        console.info("[SIGSS] getIsad()");
         const dadosIsad = await obterDadosIsad(isadPK);
         if (!dadosIsad) {
             return msgs.NAO_ENCONTRADO;
@@ -44,6 +46,49 @@ async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
 }
 
 async function buscarImovelPorCodigoSigss(codigoSigss) {
+    return await buscarEmTodasMicroareas(codigoSigss);
+}
+
+async function buscarEmTodasMicroareas(codigoSigss) {
+    const fnListaMicroareas = (typeof window !== 'undefined' && window.getListaTodasMicroareas) || (typeof getListaTodasMicroareas !== 'undefined' ? getListaTodasMicroareas : null);
+    
+    let microareas = [];
+    if (typeof fnListaMicroareas === 'function') {
+        microareas = fnListaMicroareas();
+    } else if (typeof require !== 'undefined') {
+        try {
+            const equipes = require('./equipes.js');
+            microareas = equipes.getListaTodasMicroareas();
+        } catch (e) {}
+    }
+
+    const promessas = microareas.map(m => buscarEmMicroarea(m, codigoSigss));
+    const resultados = await Promise.all(promessas);
+
+    console.info("[SIGSS] Total de microáreas consultadas:", microareas.length);
+
+    const encontrados = resultados.filter(r => r && r.status === 'SUCESSO' && r.imovPK);
+
+    console.info("[SIGSS] Total encontrados:", encontrados.length);
+
+    if (encontrados.length === 0) {
+        return { status: 'NAO_ENCONTRADO' };
+    }
+
+    if (encontrados.length === 1) {
+        const unico = encontrados[0];
+        if (unico.microareaInfo) {
+            console.info("[SIGSS] Microárea encontrada:", unico.microareaInfo.area, unico.microareaInfo.microCodigo);
+        }
+        return { status: 'SUCESSO', imovPK: unico.imovPK };
+    }
+
+    return { status: 'MULTIPLOS_ENCONTRADOS' };
+}
+
+async function buscarEmMicroarea(configuracaoMicroarea, codigoSigss) {
+    console.info("[SIGSS] Consultando:", configuracaoMicroarea.codigoESF, configuracaoMicroarea.microNumero, codigoSigss);
+
     try {
         const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
             LISTA_IMOVEL: 'imobiliarioFamiliar2/lista',
@@ -52,22 +97,22 @@ async function buscarImovelPorCodigoSigss(codigoSigss) {
         };
 
         const params = new URLSearchParams();
-        params.set('_search', 'true');
+        params.set('_search', 'false');
         params.set('nd', String(Date.now()));
-        params.set('rows', '20');
+        params.set('rows', '15');
         params.set('page', '1');
-        params.set('sidx', 'isen.isenCod');
+        params.set('sidx', 'imov.imovInscricaoImobiliaria');
         params.set('sord', 'asc');
         params.set('searchField', 'isen.isenCod');
         params.set('searchString', codigoSigss);
         params.set('searchOper', 'eq');
-        params.set('area', '');
-        params.set('miar', '');
+        params.set('area', configuracaoMicroarea.area || '');
+        params.set('miar', configuracaoMicroarea.microCodigo || '');
+        params.set('filtroCondicaoFamiliar', 'todos');
+        params.set('outrosFiltros', '');
         params.set('rifa', '');
-        params.set('filtroCondicaoFamiliar', '');
 
         const urlCompleta = `${endpoints.LISTA_IMOVEL}?${params.toString()}`;
-        console.info("[SIGSS] URL completa:", urlCompleta);
 
         const response = await fetch(urlCompleta, {
             method: 'GET',
@@ -77,58 +122,42 @@ async function buscarImovelPorCodigoSigss(codigoSigss) {
             }
         });
 
-        console.info("[SIGSS] Status HTTP:", response.status);
-
-        const textResponse = await response.text();
-        console.info("[SIGSS] Body:", textResponse);
-
-        let data = null;
-        try {
-            data = JSON.parse(textResponse);
-            console.info("[SIGSS] JSON Parsed:", data);
-        } catch (eJson) {
-            console.info("[SIGSS] Primeiros 500 caracteres (HTML/Texto):", textResponse.substring(0, 500));
-            return { status: 'NAO_ENCONTRADO' };
+        if (!response.ok) {
+            console.info("[SIGSS] Records:", 0);
+            return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
         }
 
-        if (!response.ok || !data) {
-            return { status: 'NAO_ENCONTRADO' };
-        }
-
+        const data = await response.json();
         const totalRecords = typeof data.records !== 'undefined' 
             ? Number(data.records) 
             : (Array.isArray(data.rows) ? data.rows.length : 0);
 
-        if (totalRecords === 0) {
-            return { status: 'NAO_ENCONTRADO' };
-        }
+        console.info("[SIGSS] Records:", totalRecords);
 
-        if (totalRecords > 1) {
-            return { status: 'MULTIPLOS_ENCONTRADOS' };
+        if (totalRecords === 0) {
+            return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
         }
 
         const primeiraLinha = data.rows && data.rows[0];
         if (!primeiraLinha) {
-            return { status: 'NAO_ENCONTRADO' };
+            return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
         }
 
         const imovPK = extrairImovPK(primeiraLinha);
         if (!imovPK) {
-            return { status: 'NAO_ENCONTRADO' };
+            return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
         }
 
-        console.info("[SIGSS] imovPK localizado:", imovPK);
-        return { status: 'SUCESSO', imovPK };
+        return { status: 'SUCESSO', records: totalRecords, imovPK, microareaInfo: configuracaoMicroarea };
 
     } catch (e) {
-        console.error('[SIGSS] Erro em buscarImovelPorCodigoSigss:', e);
-        return { status: 'NAO_ENCONTRADO' };
+        console.info("[SIGSS] Records:", 0);
+        return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
     }
 }
 
 async function visualizarImovel(imovPK) {
     try {
-        console.info("[SIGSS] visualizar() para imovPK:", imovPK);
         const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
             VISUALIZAR_IMOVEL: 'imobiliarioFamiliar/visualizar'
         };
@@ -158,7 +187,6 @@ async function visualizarImovel(imovPK) {
 
 async function obterDadosIsad(isadPK) {
     try {
-        console.info("[SIGSS] getIsad() para isadPK:", isadPK);
         const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
             GET_ISAD: 'imobiliarioFamiliar/getIsad'
         };
@@ -245,6 +273,8 @@ function extrairIsadPK(data) {
 if (typeof window !== 'undefined') {
     window.pesquisarImovelEGerarEnumeracao = pesquisarImovelEGerarEnumeracao;
     window.buscarImovelPorCodigoSigss = buscarImovelPorCodigoSigss;
+    window.buscarEmTodasMicroareas = buscarEmTodasMicroareas;
+    window.buscarEmMicroarea = buscarEmMicroarea;
     window.visualizarImovel = visualizarImovel;
     window.obterDadosIsad = obterDadosIsad;
     window.montarCodigoFinal = montarCodigoFinal;
@@ -254,6 +284,8 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         pesquisarImovelEGerarEnumeracao,
         buscarImovelPorCodigoSigss,
+        buscarEmTodasMicroareas,
+        buscarEmMicroarea,
         visualizarImovel,
         obterDadosIsad,
         montarCodigoFinal

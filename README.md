@@ -4,17 +4,24 @@
 
 ---
 
-## 🛠️ Correção da Consulta Imobiliária (v0.4.5)
+## ⚡ Busca Paralela por Microáreas (v0.5.0)
 
-A versão **v0.4.5** corrige o erro **HTTP 400 (Bad Request)** observado na homologação em campo durante a consulta ao endpoint `imobiliarioFamiliar2/lista`.
+A versão **v0.5.0** implementa a nova estratégia de localização do imóvel através de **13 consultas simultâneas em paralelo** via `Promise.all`.
 
-### Análise Técnica da Causa Raiz
-O endpoint `imobiliarioFamiliar2/lista` do SIGSS é um controlador de grid Java (jqGrid). Quando a requisição continha apenas `?searchField=isen.isenCod&searchString=<codigo>`, o binding de dados do backend falhava por falta dos parâmetros estritos de paginação e estado do jqGrid (`_search`, `rows`, `page`, `sidx`, `sord`).
+### Descoberta Arquitetural
+A homologação prática demonstrou que o endpoint `imobiliarioFamiliar2/lista` do SIGSS foi projetado para pesquisar dentro de uma microárea específica (`area` e `miar`), não em toda a base global do município.
 
-### Solução Aplicada
-1. Reconstrução completa da URL de busca utilizando a API `URLSearchParams` com todos os parâmetros obrigatórios e opcionais do jqGrid.
-2. Inclusão dos cabeçalhos HTTP de requisição AJAX (`X-Requested-With: XMLHttpRequest`, `Accept: application/json, text/javascript, */*; q=0.01`).
-3. Adição de instrumentação de diagnósticos HTTP (`[SIGSS] URL completa:`, `[SIGSS] Status HTTP:`, `[SIGSS] Body:`).
+### Novo Algoritmo de Localização
+```
+Código SIGSS
+     │
+     ▼
+13 Consultas Simultâneas (Promise.all)
+     │
+     ├── 0 Resultados ──► "Não encontrado em imóvel"
+     ├── 1 Resultado  ──► visualizar() ──► getIsad() ──► Enumeração (ex: "086_03_018_03")
+     └── >= 2 Resultados ──► "Múltiplos imóveis encontrados"
+```
 
 ---
 
@@ -55,7 +62,8 @@ O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos 
 - [x] **v0.4.2 (RC-1.1)**: Correção do bootstrap de inicialização.
 - [x] **v0.4.3-debug (RC-1.2)**: Instrumentação completa de execução linha a linha.
 - [x] **v0.4.4 (RC-1.3)**: Reestruturação arquitetural do Bootstrap via injeção direta no `manifest.json`.
-- [x] **v0.4.5**: Correção da consulta imobiliária (`imobiliarioFamiliar2/lista`) com suporte completo aos parâmetros jqGrid e eliminação do HTTP 400.
+- [x] **v0.4.5**: Correção da consulta imobiliária (`imobiliarioFamiliar2/lista`) com parâmetros do jqGrid.
+- [x] **v0.5.0**: Nova estratégia de localização do imóvel via busca paralela simultânea por microáreas (`Promise.all`).
 
 ---
 
