@@ -4,24 +4,14 @@
 
 ---
 
-## ⚡ Busca Paralela por Microáreas (v0.5.0)
+## 🔬 Auditoria Completa da Cadeia Imobiliária (v0.5.1)
 
-A versão **v0.5.0** implementa a nova estratégia de localização do imóvel através de **13 consultas simultâneas em paralelo** via `Promise.all`.
+A versão **v0.5.1** adiciona a **instrumentação de auditoria em 10 etapas** sobre o fluxo `visualizar()` → `getIsad()` → `formatter()`.
 
-### Descoberta Arquitetural
-A homologação prática demonstrou que o endpoint `imobiliarioFamiliar2/lista` do SIGSS foi projetado para pesquisar dentro de uma microárea específica (`area` e `miar`), não em toda a base global do município.
+### Objetivo da Auditoria
+Capturar a resposta bruta e o JSON integral retornado pelos endpoints do SIGSS (`imobiliarioFamiliar/visualizar` e `imobiliarioFamiliar/getIsad`), permitindo mapear com exatidão o formato e a localização do objeto `isadPK` e das propriedades cadastrais do domicílio em ambiente de produção na UBS.
 
-### Novo Algoritmo de Localização
-```
-Código SIGSS
-     │
-     ▼
-13 Consultas Simultâneas (Promise.all)
-     │
-     ├── 0 Resultados ──► "Não encontrado em imóvel"
-     ├── 1 Resultado  ──► visualizar() ──► getIsad() ──► Enumeração (ex: "086_03_018_03")
-     └── >= 2 Resultados ──► "Múltiplos imóveis encontrados"
-```
+Consulte a documentação completa da auditoria em [**docs/AUDITORIA_ISAD.md**](docs/AUDITORIA_ISAD.md).
 
 ---
 
@@ -64,6 +54,7 @@ O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos 
 - [x] **v0.4.4 (RC-1.3)**: Reestruturação arquitetural do Bootstrap via injeção direta no `manifest.json`.
 - [x] **v0.4.5**: Correção da consulta imobiliária (`imobiliarioFamiliar2/lista`) com parâmetros do jqGrid.
 - [x] **v0.5.0**: Nova estratégia de localização do imóvel via busca paralela simultânea por microáreas (`Promise.all`).
+- [x] **v0.5.1**: Instrumentação de auditoria completa da cadeia `visualizar()` → `getIsad()` → `formatter()`.
 
 ---
 
