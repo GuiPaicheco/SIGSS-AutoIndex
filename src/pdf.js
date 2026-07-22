@@ -1,63 +1,38 @@
 /**
- * Módulo de Manipulação de PDF em Memória
+ * Módulo de Manipulação de PDF em Memória - Sprint v0.4.0
  * 
- * Baixa o PDF original do relatório SIGSS, adiciona a linha de enumeração no topo centralizado
- * inteiramente em memória sem salvar ou sobrescrever nenhum arquivo local, e abre o PDF modificado.
+ * Baixa o PDF do relatório SIGSS, adiciona a linha de enumeração no topo centralizado
+ * inteiramente em memória sem salvar arquivos locais e abre a janela com o PDF modificado.
  */
 
 /**
- * Baixa o PDF original, adiciona o texto de enumeração no topo da página e abre a nova janela.
+ * Baixa o PDF original como ArrayBuffer em memória.
  * 
- * @param {string} urlPdfOriginal - URL do relatório PDF retornado pelo SIGSS
- * @param {string} textoEnumeracao - Texto a ser inserido (ex: "086_03_018_03" ou "Não encontrado em imóvel")
- * @param {Function} windowOpenOriginal - Função window.open original
+ * @param {string} urlPdfOriginal 
+ * @returns {Promise<ArrayBuffer>}
  */
-export async function processarEExibirPdf(urlPdfOriginal, textoEnumeracao, windowOpenOriginal) {
-    try {
-        // 1. Baixar o PDF original para ArrayBuffer em memória
-        const response = await fetch(urlPdfOriginal);
-        if (!response.ok) {
-            throw new Error(`Falha ao baixar PDF original: HTTP ${response.status}`);
-        }
-        const pdfArrayBuffer = await response.arrayBuffer();
-
-        // 2. Modificar o PDF em memória (usando pdf-lib se disponível, ou fallback de injeção)
-        let pdfModificadoArrayBuffer = pdfArrayBuffer;
-
-        if (window.PDFLib) {
-            pdfModificadoArrayBuffer = await adicionarEnumeracaoPdfLib(pdfArrayBuffer, textoEnumeracao);
-        }
-
-        // 3. Criar Blob e ObjectURL em memória
-        const blob = new Blob([pdfModificadoArrayBuffer], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        // 4. Abrir PDF modificado na janela do navegador
-        const novaJanela = windowOpenOriginal(blobUrl, '_blank');
-
-        // 5. Agendar descarte do ObjectURL da memória após abertura
-        setTimeout(() => {
-            URL.revokeObjectURL(blobUrl);
-        }, 60000);
-
-        return novaJanela;
-
-    } catch (erro) {
-        console.error('[SIGSS+] Erro ao processar PDF em memória:', erro);
-        // Fallback: abre o PDF original se houver falha
-        return windowOpenOriginal(urlPdfOriginal, '_blank');
+export async function baixarPdf(urlPdfOriginal) {
+    const response = await fetch(urlPdfOriginal);
+    if (!response.ok) {
+        throw new Error(`Falha ao baixar PDF: HTTP ${response.status}`);
     }
+    return await response.arrayBuffer();
 }
 
 /**
- * Adiciona a enumeração no topo centralizado da página utilizando a biblioteca pdf-lib
+ * Edita o PDF em memória inserindo a linha de enumeração no topo centralizado.
  * 
- * @param {ArrayBuffer} arrayBuffer 
- * @param {string} texto 
- * @returns {Promise<ArrayBuffer>}
+ * @param {ArrayBuffer} arrayBuffer - Conteúdo bruto do PDF original
+ * @param {string} textoEnumeracao - String da enumeração (ex: "086_03_018_03")
+ * @returns {Promise<ArrayBuffer>} ArrayBuffer do PDF modificado
  */
-async function adicionarEnumeracaoPdfLib(arrayBuffer, texto) {
-    const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+export async function editarPdf(arrayBuffer, textoEnumeracao) {
+    const pdfLib = (typeof window !== 'undefined' && window.PDFLib) || (typeof global !== 'undefined' && global.PDFLib);
+    if (!pdfLib) {
+        throw new Error('Biblioteca pdf-lib não carregada no contexto.');
+    }
+
+    const { PDFDocument, rgb, StandardFonts } = pdfLib;
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
@@ -65,21 +40,44 @@ async function adicionarEnumeracaoPdfLib(arrayBuffer, texto) {
     if (pages.length > 0) {
         const primeiraPagina = pages[0];
         const { width, height } = primeiraPagina.getSize();
-        
-        const fontSize = 11;
-        const textWidth = font.widthOfTextAtSize(texto, fontSize);
-        const x = (width - textWidth) / 2; // Centralizado
+
+        const fontSize = 12;
+        const textWidth = font.widthOfTextAtSize(textoEnumeracao, fontSize);
+        const x = (width - textWidth) / 2; // Centralizado horizontalmente
         const y = height - 18; // Topo da página, acima do cabeçalho original
 
-        primeiraPagina.drawText(texto, {
+        // Inserção do texto com destaque suficiente
+        primeiraPagina.drawText(textoEnumeracao, {
             x: x,
             y: y,
             size: fontSize,
             font: font,
-            color: rgb(0, 0, 0)
+            color: rgb(0, 0.1, 0.4) // Azul escuro destacado para organização física
         });
     }
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes.buffer;
+}
+
+/**
+ * Converte o ArrayBuffer do PDF modificado em Blob/ObjectURL em memória e abre em nova janela.
+ * 
+ * @param {ArrayBuffer} arrayBufferModificado 
+ * @param {Function} windowOpenOriginal 
+ * @returns {Window|null}
+ */
+export function abrirPdf(arrayBufferModificado, windowOpenOriginal) {
+    const blob = new Blob([arrayBufferModificado], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    const openFn = windowOpenOriginal || window.open;
+    const novaJanela = openFn(blobUrl, '_blank');
+
+    // Descarte do ObjectURL em memória após a abertura da janela
+    setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+    }, 60000);
+
+    return novaJanela;
 }

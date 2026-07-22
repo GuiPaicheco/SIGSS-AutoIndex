@@ -2,6 +2,17 @@
 
 Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 
+## [0.4.0] - 2026-07-22
+
+### Adicionado
+- Pipeline completo de impressão implementado (`src/pipeline.js`).
+- Enumeração automática do prontuário em formato oficial no topo centralizado do PDF.
+- Criação do módulo `src/formatter.js` para formatação isolada da string de enumeração.
+- Integração completa entre interceptação, leitura do Código SIGSS, pesquisa imobiliária e edição do PDF em memória.
+- Processamento integralmente em memória sem criação de cache, banco de dados ou arquivos em disco.
+- Tratamento de falhas resiliente com abertura automática do PDF original sem travar o médico ou o navegador.
+- Inclusão da documentação técnica em `docs/arquitetura.md`, `docs/fluxo.md`, `docs/depuracao.md` e `CONFIG.md`.
+
 ## [0.3.0] - 2026-07-22
 
 ### Adicionado

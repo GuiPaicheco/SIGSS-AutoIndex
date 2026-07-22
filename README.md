@@ -1,4 +1,4 @@
-# SIGSS-AutoIndex - Extensão para Enumeração Automática de Prontuários (FAA)
+# SIGSS-AutoIndex - Pipeline Inteligente de Impressão de Prontuários (FAA)
 
 > Extensão para Google Chrome desenvolvida para automatizar de maneira 100% transparente a enumeração dos prontuários emitidos pelo sistema SIGSS da Prefeitura de Betim.
 
@@ -6,112 +6,90 @@
 
 ## 🎯 Objetivo
 
-O **SIGSS-AutoIndex** tem como objetivo inserir automaticamente no topo dos prontuários impressos (FAA) a identificação da equipe, microárea, número de família e sufixo de equipe (ex: `086_03_018_03`), eliminando qualquer necessidade de preenchimento manual ou alteração no fluxo de trabalho dos médicos e profissionais de saúde.
+O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos (FAA) a identificação completa da equipe, microárea, número de família e sufixo de equipe (ex: `086_03_018_03`), eliminando qualquer necessidade de preenchimento manual ou alteração na rotina dos médicos e profissionais de saúde.
 
 ### Princípios Inegociáveis
 
-A extensão opera sob estritos princípios de transparência e privacidade:
 - **Zero armazenamento**: Não cria banco de dados, não cria cache e não salva arquivos locais.
 - **Zero interferência na UI**: Nenhum botão adicionado, nenhuma tela modificada, nenhuma caixa de confirmação.
 - **Zero alteração de fluxo**: O médico continua realizando a mesma sequência habitual (Abrir atendimento → Finalizar atendimento → Imprimir).
-- **Execução estritamente em memória**: Toda informação existe apenas em memória durante o processo de impressão e é totalmente descartada ao finalizar.
+- **Execução 100% em memória**: Toda informação existe apenas em memória durante o processo de impressão e é totalmente descartada ao finalizar.
+- **Resiliência Crítica (Fallback Garantido)**: Se ocorrer qualquer falha no pipeline, o PDF original sem modificações é aberto automaticamente para o médico.
 
 ---
 
-## 🔄 Funcionamento
+## 🚀 Pipeline Inteligente de Impressão (Versão 0.4.0)
 
-Quando o profissional de saúde clica no botão de impressão do SIGSS:
+A partir da versão 0.4.0, toda a orquestração do fluxo de impressão é gerenciada de forma desacoplada pelo módulo `src/pipeline.js`:
 
 ```
-Médico clica em "Imprimir" no SIGSS
-              ↓
-SIGSS executa: POST atendimentoConsulta/imprimirFAA
-              ↓
-SIGSS-AutoIndex intercepta a resposta json.report
-              ↓
-Baixar PDF original em memória
-              ↓
-Obter Código SIGSS (Leitura automática: Input → Documento/PDF)
-              ↓
-Integrar Imóvel (Cadeia encadeada: lista → visualizar → getIsad)
-              ↓
-Gerar string de enumeração (ex: 086_03_018_03)
-              ↓
-Inserir enumeração no topo centralizado da página
-              ↓
-Abrir janela com o PDF modificado para impressão
+1. Médico clica em "Imprimir" no SIGSS
+                    ↓
+2. SIGSS executa: POST atendimentoConsulta/imprimirFAA
+                    ↓
+3. interceptor.js captura a resposta JSON com a reportUrl
+                    ↓
+4. pipeline.js assume a orquestração em segundo plano:
+   │
+   ├── Obter Código SIGSS (Input → Documento/PDF)
+   ├── Consultar Imóvel (Cadeia: lista → visualizar → getIsad)
+   ├── Formatar Enumeração (formatter.js ex: "086_03_018_03")
+   ├── Baixar PDF em memória (pdf.js)
+   ├── Carimbar enumeração no topo centralizado via pdf-lib
+   └── Abrir janela com PDF modificado em memória (Blob URL)
 ```
 
 ---
 
-## 🏠 Integração Imobiliária SIGSS (Versão 0.3.0)
+## 🛡️ Tratamento de Falhas e Cenários de Resultado
 
-A partir da versão 0.3.0, a consulta de imóveis e microáreas é realizada através de uma cadeia técnica encadeada e determinística, eliminando a necessidade de varreduras paralelas exaustivas por todas as microáreas:
-
-```
-Código SIGSS
-    ↓
-GET imobiliarioFamiliar2/lista?searchField=isen.isenCod&searchString=<Código SIGSS>
-    ↓
-Extrair imovPK.idp e imovPK.ids (quando records == 1)
-    ↓
-POST imobiliarioFamiliar/visualizar
-    ↓
-Obter isadPK.idp e isadPK.ids
-    ↓
-POST imobiliarioFamiliar/getIsad
-    ↓
-Obter areaCod, miarCod e isadNumFamiliaSiab -> Gerar "086_03_018_03"
-```
-
-### Tratamento de Resultados:
-- **`records == 0`**: Retorna `"Não encontrado em imóvel"`.
-- **`records == 1`**: Segue a cadeia técnica para obter os dados oficiais e gerar a string de enumeração.
-- **`records > 1`**: Retorna `"Múltiplos imóveis encontrados"` sem escolher um resultado arbitrariamente.
-
-### Impacto na Simplificação do Projeto:
-A descoberta da cadeia `lista → visualizar → getIsad` simplificou drasticamente a arquitetura do sistema. Em vez de realizar dezenas de chamadas HTTP concorrentes por microárea, a extensão efetua apenas 3 requisições sequenciais direcionadas e exatas, resultando em:
-- Maior velocidade de resposta (< 50ms total).
-- Redução de carga no servidor do SIGSS.
-- Maior confiabilidade e determinismo nos dados retornados.
+| Cenário | Comportamento do SIGSS-AutoIndex |
+| :--- | :--- |
+| **1. Paciente Encontrado** | Carimba a string oficial (ex: `086_03_018_03`) no topo centralizado do PDF. |
+| **2. Paciente Não Encontrado** | Carimba a mensagem `"Não encontrado em imóvel"` no topo do PDF. |
+| **3. Múltiplos Imóveis** | Carimba a mensagem `"Múltiplos imóveis encontrados"` no topo do PDF. |
+| **4. Erro de Rede ou Parse** | Abre automaticamente o **PDF original** sem travar o médico ou o navegador. |
 
 ---
 
-## 🔑 Leitura Automática do Código SIGSS (Versão 0.2.0)
+## 📚 Documentação Técnica
 
-A extração do Código SIGSS opera sob prioridade estrita:
-1. **PRIORIDADE 1 (Campo Input da Tela)**: Lê diretamente o valor presente nos inputs HTML da tela do SIGSS (centralizados em `src/constants.js`).
-2. **PRIORIDADE 2 (Documento/PDF)**: Caso o input esteja vazio ou indisponível, realiza a leitura e parse do documento PDF em memória via regex.
-3. **Tratamento de Erros**: Retorna `null` em caso de erro, sem bloquear o fluxo de impressão do médico.
+Disponível no diretório [`docs/`](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs):
+- [**docs/arquitetura.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/arquitetura.md): Visão geral dos módulos e responsabilidade única.
+- [**docs/fluxo.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/fluxo.md): Detalhamento passo a passo do fluxo e fallback.
+- [**docs/depuracao.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/depuracao.md): Guia de diagnósticos e inspeção de logs no DevTools.
+- [**CONFIG.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/CONFIG.md): Guia de configuração de constantes e adaptação para outras UBS.
 
 ---
 
-## 🏗️ Arquitetura do Sistema
-
-O projeto adota uma arquitetura modular em JavaScript moderno (ES2022+), utilizando as APIs do **Chrome Extension Manifest V3**.
+## 🏗️ Estrutura do Projeto
 
 ```
 SIGSS-AutoIndex/
 ├── manifest.json       # Configuração do Manifest V3 da extensão Chrome
-├── README.md           # Documentação técnica e guia de uso
-├── CHANGELOG.md        # Registro de alterações e histórico de versões
+├── README.md           # Documentação técnica principal
+├── CHANGELOG.md        # Histórico de alterações por versão
+├── CONFIG.md           # Guia de configuração de constantes e endpoints
+├── docs/               # Documentação técnica detalhada (arquitetura, fluxo, depuração)
 ├── lib/
 │   └── pdf-lib.min.js  # Biblioteca pdf-lib para edição de PDF em memória
 └── src/
-    ├── constants.js    # Seletores HTML, equipes, microáreas e endpoints
-    ├── equipes.js      # Utilitários de busca de equipes e sufixos
-    ├── utils.js        # Função obterCodigoSIGSS (Prioridade Input → PDF)
-    ├── imovel.js       # Integração imobiliária (lista -> visualizar -> getIsad)
-    ├── pdf.js          # Manipulação e carimbo de PDF em memória
-    ├── interceptor.js  # Hook nas chamadas de impressão do SIGSS
-    └── main.js         # Orquestrador do fluxo transparente
+    ├── constants.js    # Endpoints, seletores HTML e tabela de equipes/ESF
+    ├── equipes.js      # Utilitários de sufixo de equipe
+    ├── utils.js        # Obtenção do Código SIGSS (Prioridade Input → PDF)
+    ├── imovel.js       # Integração imobiliária encadeada (lista -> visualizar -> getIsad)
+    ├── formatter.js    # Formatação isolada da string de enumeração
+    ├── pdf.js          # Leitura, carimbo e exibição de PDF em memória
+    ├── interceptor.js  # Hook de rede e de window.open
+    ├── pipeline.js     # Orquestrador único do Pipeline de Impressão Inteligente
+    └── main.js         # Ponto de entrada da extensão
 ```
 
 ---
 
 ## 💻 Instalação
 
-1. Clone este repositório:
+1. Clone o repositório oficial:
    ```bash
    git clone https://github.com/GuiPaicheco/SIGSS-AutoIndex.git
    ```
@@ -122,12 +100,12 @@ SIGSS-AutoIndex/
 
 ---
 
-## 🚀 Roadmap / Versões
+## 🚀 Versões
 
 - [x] **v0.1.0**: Estrutura base do projeto, Manifest V3 e Módulo Interceptor de Impressão (`interceptor.js`).
-- [x] **v0.2.0**: Leitura automática do Código SIGSS com prioridade estrita (Input → Documento/PDF) e tratamento de erros.
+- [x] **v0.2.0**: Leitura automática do Código SIGSS com prioridade estrita (Input → Documento/PDF).
 - [x] **v0.3.0**: Integração imobiliária do SIGSS através da cadeia validada (`lista → visualizar → getIsad`).
-- [ ] **v0.4.0**: Inserção automática da linha de enumeração no PDF em memória e abertura da janela (`pdf.js`).
+- [x] **v0.4.0**: Pipeline de Impressão Inteligente com carimbo de PDF em memória e política de fallback.
 
 ---
 
