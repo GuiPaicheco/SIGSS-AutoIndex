@@ -1,32 +1,23 @@
-import { executarFluxoImpressao } from './pipeline.js';
-import { DEBUG_MODE } from './constants.js';
+console.info("[SIGSS] 08 - entrou em main.js");
 
-/**
- * Ponto de Entrada do SIGSS-AutoIndex (v0.4.2)
- * 
- * Registra o Pipeline de Impressão e expõe executarFluxoImpressao no window.
- */
+import { executarFluxoImpressao } from './pipeline.js';
+console.info("[SIGSS] 09 - pipeline importado");
+
 export function inicializarSigssAutoIndex() {
+    console.info("[SIGSS] 10 - inicializando");
     const targetWindow = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
 
     if (targetWindow) {
-        // 1. Expõe a função diretamente em window.executarFluxoImpressao
-        targetWindow.executarFluxoImpressao = executarFluxoImpressao;
-
-        // 2. Registra o manipulador no interceptor
+        console.info("[SIGSS] 11 - registrando handler");
         if (typeof targetWindow.__SIGSS_PLUS_REGISTRAR_HANDLER__ === 'function') {
             targetWindow.__SIGSS_PLUS_REGISTRAR_HANDLER__(executarFluxoImpressao);
+            console.info("[SIGSS] 12 - handler registrado");
         }
-    }
 
-    // 3. Exibe logs visuais de inicialização estritamente quando DEBUG_MODE = true
-    if (DEBUG_MODE) {
-        console.info('[SIGSS-AutoIndex] Bootstrap iniciado');
-        console.info('[SIGSS-AutoIndex] Main carregado');
-        console.info('[SIGSS-AutoIndex] Pipeline registrado');
-        console.info('[SIGSS-AutoIndex] Interceptador ativo');
+        targetWindow.executarFluxoImpressao = executarFluxoImpressao;
+        console.info("[SIGSS] 13 - window.executarFluxoImpressao definido");
     }
 }
 
-// Inicializa a aplicação ao carregar o módulo
 inicializarSigssAutoIndex();
+console.info("[SIGSS] 14 - main.js finalizado");

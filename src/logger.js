@@ -1,14 +1,11 @@
+console.info("[SIGSS] logger carregado");
+
 import { DEBUG_MODE } from './constants.js';
 
-/**
- * Módulo de Log Centralizado - SIGSS-AutoIndex (RC-1)
- * 
- * Substitui o uso direto de console.log, controlando a emissão de logs pelo DEBUG_MODE.
- */
 export const Logger = {
     debug: (...args) => {
         if (DEBUG_MODE) {
-            console.log('[SIGSS-AutoIndex][DEBUG]', ...args);
+            console.info('[SIGSS-AutoIndex][DEBUG]', ...args);
         }
     },
     info: (...args) => {
@@ -22,7 +19,6 @@ export const Logger = {
         }
     },
     error: (...args) => {
-        // Erros críticos são sempre mantidos no console para diagnósticos no DevTools
         console.error('[SIGSS-AutoIndex][ERROR]', ...args);
     }
 };

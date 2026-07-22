@@ -1,10 +1,5 @@
-/**
- * Módulo Interceptor e Bootstrap do SIGSS-AutoIndex (v0.4.2)
- * 
- * Executa no contexto MAIN da página no document_start:
- * 1. Instala os hooks transparentes de window.open, XMLHttpRequest e fetch.
- * 2. Injeta dinamicamente src/main.js como um módulo ES6 na DOM.
- */
+console.info("[SIGSS] 01 - interceptor.js carregado");
+
 (function () {
     'use strict';
 
@@ -20,36 +15,46 @@
     let callbackImpressaoInterceptada = null;
 
     /**
-     * Registra a função do pipeline para receber chamadas de impressão.
+     * Registrador do Handler (Etapa 5)
      */
     window.__SIGSS_PLUS_REGISTRAR_HANDLER__ = function (handler) {
+        console.info("[SIGSS] Handler recebido");
+        console.info(handler);
+        console.info(typeof handler);
         callbackImpressaoInterceptada = handler;
     };
+    console.info("[SIGSS] 03 - registrador criado");
 
     /**
-     * Instala a sobrescrita do window.open
+     * Instala a sobrescrita do window.open (Etapa 4)
      */
     const interceptedOpen = function (url, name, specs) {
+        console.info("[SIGSS] OPEN chamado", url);
+        console.info("[SIGSS] callback =", callbackImpressaoInterceptada);
+        console.info("[SIGSS] typeof callback =", typeof callbackImpressaoInterceptada);
+
         const isReportPdf = (typeof url === 'string') && (url.includes('/sigss/arquivo/') || url.endsWith('.pdf'));
 
         if ((capturarProximoReport || isReportPdf) && typeof callbackImpressaoInterceptada === 'function') {
+            console.info("[SIGSS] entrando no Pipeline");
             capturarProximoReport = false;
             callbackImpressaoInterceptada(url, name, specs, ORIGINAL_OPEN);
-            return null; // Bloqueia a abertura imediata do PDF não enumerado
+            return null;
         }
 
+        console.info("[SIGSS] abrindo PDF original");
         return ORIGINAL_OPEN.apply(window, arguments);
     };
 
-    // Evidencia a interceptação no teste window.open.toString()
     interceptedOpen.toString = function () {
         return 'function open() { [SIGSS-AutoIndex Interceptor Active] }';
     };
 
     window.open = interceptedOpen;
+    console.info("[SIGSS] 02 - window.open interceptado");
 
     /**
-     * Intercepta o XMLHttpRequest para identificar a chamada ao endpoint de impressão
+     * Intercepta XMLHttpRequest
      */
     const originalXhrOpen = XMLHttpRequest.prototype.open;
     const originalXhrSend = XMLHttpRequest.prototype.send;
@@ -68,16 +73,14 @@
                     if (responseJson && responseJson.report) {
                         window.__SIGSS_ULTIMO_REPORT__ = responseJson.report;
                     }
-                } catch (e) {
-                    // Erro silencioso em produção
-                }
+                } catch (e) {}
             });
         }
         return originalXhrSend.apply(this, arguments);
     };
 
     /**
-     * Intercepta fetch para garantir cobertura caso o SIGSS utilize Fetch API
+     * Intercepta Fetch API
      */
     const originalFetch = window.fetch;
     if (typeof originalFetch === 'function') {
@@ -95,9 +98,7 @@
                         capturarProximoReport = true;
                         window.__SIGSS_ULTIMO_REPORT__ = data.report;
                     }
-                } catch (e) {
-                    // Erro silencioso em produção
-                }
+                } catch (e) {}
             }
 
             return response;
@@ -105,22 +106,34 @@
     }
 
     /**
-     * Bootstrap: Injeta src/main.js como um ES Module na DOM da página
+     * Bootstrap dinâmico (Etapa 1)
      */
     function injetarMainModule() {
+        console.info("[SIGSS] 04 - iniciando bootstrap");
         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
             if (!document.querySelector('script[data-sigss-autoindex-main]')) {
                 const script = document.createElement('script');
                 script.type = 'module';
                 script.src = chrome.runtime.getURL('src/main.js');
                 script.setAttribute('data-sigss-autoindex-main', 'true');
-                
+                console.info("[SIGSS] 05 - script module criado");
+
+                script.onload = () => {
+                    console.info("[SIGSS] 07 - main.js carregado");
+                };
+
+                script.onerror = (e) => {
+                    console.error("[SIGSS] ERRO carregando main.js", e);
+                };
+
                 const alvo = document.head || document.documentElement;
                 if (alvo) {
                     alvo.appendChild(script);
+                    console.info("[SIGSS] 06 - script anexado à DOM");
                 } else {
                     document.addEventListener('DOMContentLoaded', function () {
                         (document.head || document.documentElement).appendChild(script);
+                        console.info("[SIGSS] 06 - script anexado à DOM (DOMContentLoaded)");
                     });
                 }
             }

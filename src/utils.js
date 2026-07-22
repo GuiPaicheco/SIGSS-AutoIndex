@@ -1,41 +1,24 @@
+console.info("[SIGSS] utils carregado");
+
 import { SELETORES_INPUT_SIGSS } from './constants.js';
-import { Logger } from './logger.js';
 
-/**
- * Módulo de Utilitários - SIGSS-AutoIndex (v0.4.1)
- * 
- * Responsável pela obtenção do Código SIGSS (Prioridade 1: Input -> Prioridade 2: Documento/PDF).
- */
-
-/**
- * Obtém o Código SIGSS a ser utilizado como chave única de busca.
- * 
- * @param {string|null} [urlReport=null] 
- * @returns {Promise<string|null>}
- */
 export async function obterCodigoSIGSS(urlReport = null) {
     try {
-        // PRIORIDADE 1: Leitura do campo INPUT da tela do SIGSS
         const codigoDoInput = lerCodigoDoInputTela();
         if (codigoDoInput) {
-            Logger.debug('Código SIGSS obtido via Input da tela:', codigoDoInput);
             return codigoDoInput;
         }
 
-        // PRIORIDADE 2: Leitura do Documento/PDF (somente se input não forneceu valor)
         if (urlReport) {
-            Logger.debug('Input vazio/ausente. Tentando extração do Código SIGSS via PDF...');
             const codigoDoPdf = await lerCodigoDoDocumentoPdf(urlReport);
             if (codigoDoPdf) {
-                Logger.debug('Código SIGSS obtido via parse do PDF:', codigoDoPdf);
                 return codigoDoPdf;
             }
         }
 
-        Logger.debug('Nenhum Código SIGSS localizado.');
         return null;
     } catch (erro) {
-        Logger.error('Erro silencioso durante obtenção do Código SIGSS:', erro);
+        console.error('[SIGSS] Erro em obterCodigoSIGSS:', erro);
         return null;
     }
 }

@@ -4,64 +4,46 @@
 
 ---
 
-## 🔬 Correção Crítica de Inicialização (v0.4.2 - BLOCKER Resolvido)
+## 🔬 Versão de Diagnóstico de Campo (v0.4.3-debug - RC-1.2)
 
-A versão **v0.4.2** corrige a inicialização dos módulos ES6 no Manifest V3 do Google Chrome. O script [src/interceptor.js](file:///c:/Users/guilh/Documents/Programação/SIGSS+/src/interceptor.js) agora realiza o bootstrap dinâmico injetando [src/main.js](file:///c:/Users/guilh/Documents/Programação/SIGSS+/src/main.js) como um módulo ES6 (`<script type="module">`) no contexto principal de execução (`world: "MAIN"`), garantindo:
+A versão **v0.4.3-debug** introduz **instrumentação completa linha a linha** com mensagens explícitas de `console.info` (01 a 22) para rastreamento exato do ponto de execução no ambiente real do SIGSS.
 
-1. `typeof window.executarFluxoImpressao === "function"`.
-2. Interceptação visível em `window.open.toString()`.
-3. Presença de todos os módulos (`main.js`, `pipeline.js`, `utils.js`, `imovel.js`, `formatter.js`, `pdf.js`) no painel *Sources* do DevTools.
-4. Suporte a URLs com IPs de redes internas da UBS (`http://*/*`).
+### Sequência Rastreável de Logs no DevTools Console:
 
-Para orientações sobre a instalação e execução do teste em campo, consulte o [**Guia de Homologação e Teste Real (docs/TESTE_REAL.md)**](file:///c:/Users/guilh/Documents/Programação/SIGSS+/docs/TESTE_REAL.md).
+```
+[SIGSS] 01 - interceptor.js carregado
+[SIGSS] 02 - window.open interceptado
+[SIGSS] 03 - registrador criado
+[SIGSS] 04 - iniciando bootstrap
+[SIGSS] 05 - script module criado
+[SIGSS] 06 - script anexado à DOM
+[SIGSS] 07 - main.js carregado
+[SIGSS] 08 - entrou em main.js
+[SIGSS] 09 - pipeline importado
+[SIGSS] 10 - inicializando
+[SIGSS] 11 - registrando handler
+[SIGSS] Handler recebido
+[SIGSS] 12 - handler registrado
+[SIGSS] 13 - window.executarFluxoImpressao definido
+[SIGSS] 14 - main.js finalizado
+[SIGSS] OPEN chamado <URL>
+[SIGSS] callback = function
+[SIGSS] entrando no Pipeline
+[SIGSS] 15 - pipeline carregado
+[SIGSS] 16 - pipeline iniciado
+[SIGSS] 17 - obtendo código SIGSS
+[SIGSS] 18 - pesquisando imóvel
+[SIGSS] 19 - formatando enumeração
+[SIGSS] 20 - editando PDF
+[SIGSS] 21 - abrindo PDF
+[SIGSS] 22 - pipeline concluído
+```
 
 ---
 
 ## 🎯 Objetivo
 
 O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos (FAA) a identificação completa da equipe, microárea, número de família e sufixo de equipe (ex: `086_03_018_03`), eliminando qualquer necessidade de preenchimento manual ou alteração na rotina dos médicos e profissionais de saúde.
-
-### Princípios Inegociáveis
-
-- **Zero armazenamento**: Não cria banco de dados, não cria cache e não salva arquivos locais.
-- **Zero interferência na UI**: Nenhum botão adicionado, nenhuma tela modificada, nenhuma caixa de confirmação.
-- **Zero alteração de fluxo**: O médico continua realizando a mesma sequência habitual (Abrir atendimento → Finalizar atendimento → Imprimir).
-- **Execução 100% em memória**: Toda informação existe apenas em memória durante o processo de impressão e é totalmente descartada ao finalizar.
-- **Resiliência Crítica (Fallback Garantido)**: Se ocorrer qualquer falha no pipeline, o PDF original sem modificações é aberto automaticamente para o médico.
-
----
-
-## 🚀 Pipeline Inteligente de Impressão
-
-Toda a orquestração do fluxo de impressão é gerenciada pelo módulo `src/pipeline.js`:
-
-```
-1. Médico clica em "Imprimir" no SIGSS
-                    ↓
-2. SIGSS executa: POST atendimentoConsulta/imprimirFAA
-                    ↓
-3. interceptor.js captura a resposta JSON com a reportUrl
-                    ↓
-4. pipeline.js assume a orquestração em segundo plano:
-   │
-   ├── Obter Código SIGSS (Input → Documento/PDF)
-   ├── Consultar Imóvel (Cadeia: lista → visualizar → getIsad)
-   ├── Formatar Enumeração (formatter.js ex: "086_03_018_03")
-   ├── Baixar PDF em memória (pdf.js)
-   ├── Carimbar enumeração no topo centralizado via pdf-lib
-   └── Abrir janela com PDF modificado em memória (Blob URL)
-```
-
----
-
-## 📚 Documentação Técnica
-
-Disponível no diretório [`docs/`](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs):
-- [**docs/TESTE_REAL.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/TESTE_REAL.md): Checklist e guia passo a passo para testes na UBS.
-- [**docs/arquitetura.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/arquitetura.md): Visão geral dos módulos e mecanismo de bootstrap em `MAIN` world.
-- [**docs/fluxo.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/fluxo.md): Detalhamento passo a passo do fluxo e fallback.
-- [**docs/depuracao.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/docs/depuracao.md): Guia de diagnósticos e inspeção de logs no DevTools.
-- [**CONFIG.md**](file:///c:/Users/guilh/Documents/Programa%C3%A7%C3%A3o/SIGSS+/CONFIG.md): Guia de configuração de constantes e adaptação para outras UBS.
 
 ---
 
@@ -85,7 +67,8 @@ Disponível no diretório [`docs/`](file:///c:/Users/guilh/Documents/Programa%C3
 - [x] **v0.3.0**: Integração imobiliária do SIGSS através da cadeia validada (`lista → visualizar → getIsad`).
 - [x] **v0.4.0**: Pipeline de Impressão Inteligente com carimbo de PDF em memória e política de fallback.
 - [x] **v0.4.1 (RC-1)**: Primeira versão Release Candidate destinada à homologação.
-- [x] **v0.4.2**: Correção do bootstrap de inicialização dos módulos ES6 no contexto `MAIN` da página.
+- [x] **v0.4.2 (RC-1.1)**: Correção do bootstrap de inicialização dos módulos ES6.
+- [x] **v0.4.3-debug (RC-1.2)**: Instrumentação completa de execução linha a linha para diagnóstico de campo.
 
 ---
 

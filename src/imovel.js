@@ -1,13 +1,7 @@
+console.info("[SIGSS] imovel carregado");
+
 import { ENDPOINTS, MENSAGENS_ENUMERACAO } from './constants.js';
 import { getSufixoEquipePorESF } from './equipes.js';
-import { Logger } from './logger.js';
-
-/**
- * Módulo de Integração Imobiliária do SIGSS (v0.4.1 - RC-1)
- * 
- * Implementa a cadeia técnica:
- * imobiliarioFamiliar2/lista -> imobiliarioFamiliar/visualizar -> imobiliarioFamiliar/getIsad
- */
 
 export async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
     if (!codigoSigss) {
@@ -15,18 +9,13 @@ export async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
     }
 
     try {
-        Logger.debug('Iniciando busca imobiliária para Código SIGSS:', codigoSigss);
-
-        // 1. Pesquisa na lista de imóveis pelo Código SIGSS
         const resultadoLista = await buscarImovelPorCodigoSigss(codigoSigss);
 
         if (resultadoLista.status === 'NAO_ENCONTRADO') {
-            Logger.debug('Resultado da lista: Nenhum imóvel localizado.');
             return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
         }
 
         if (resultadoLista.status === 'MULTIPLOS_ENCONTRADOS') {
-            Logger.debug('Resultado da lista: Múltiplos imóveis localizados.');
             return MENSAGENS_ENUMERACAO.MULTIPLOS_ENCONTRADOS;
         }
 
@@ -34,25 +23,20 @@ export async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
             return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
         }
 
-        // 2. Chama o endpoint de visualização do imóvel para obter isadPK
         const isadPK = await visualizarImovel(resultadoLista.imovPK);
         if (!isadPK) {
-            Logger.debug('Falha ao obter isadPK via visualizarImovel.');
             return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
         }
 
-        // 3. Chama o endpoint getIsad para obter os dados oficiais de área, microárea e número da família
         const dadosIsad = await obterDadosIsad(isadPK);
         if (!dadosIsad) {
-            Logger.debug('Falha ao obter dados cadastrais via getIsad.');
             return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
         }
 
-        Logger.debug('Dados ISAD recuperados com sucesso:', dadosIsad);
         return dadosIsad;
 
     } catch (erro) {
-        Logger.error('Erro durante a integração imobiliária:', erro);
+        console.error('[SIGSS] Erro em pesquisarImovelEGerarEnumeracao:', erro);
         return MENSAGENS_ENUMERACAO.NAO_ENCONTRADO;
     }
 }

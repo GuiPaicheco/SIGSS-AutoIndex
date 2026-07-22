@@ -1,11 +1,10 @@
-/**
- * Constantes globais do sistema SIGSS-AutoIndex (v0.4.2)
- */
+console.info("[SIGSS] constants carregado");
 
 /**
- * Modo de depuração. Quando true, ativa logs detalhados de cada etapa do pipeline.
+ * Constantes globais do sistema SIGSS-AutoIndex (v0.4.3-debug)
  */
-export const DEBUG_MODE = false;
+
+export const DEBUG_MODE = true;
 
 export const ENDPOINTS = {
     IMPRIMIR_FAA: 'atendimentoConsulta/imprimirFAA',
@@ -19,9 +18,6 @@ export const MENSAGENS_ENUMERACAO = {
     MULTIPLOS_ENCONTRADOS: 'Múltiplos imóveis encontrados'
 };
 
-/**
- * Centralização dos seletores HTML da tela de impressão do SIGSS.
- */
 export const SELETORES_INPUT_SIGSS = [
     'input[name*="codigoSigss"]',
     'input[name*="codSigss"]',
@@ -39,9 +35,6 @@ export const SELETORES_INPUT_SIGSS = [
     '#prontuario'
 ];
 
-/**
- * Mapeamento de Código ESF / Código de Área para sufixo de Equipe
- */
 export const MAPEAMENTO_EQUIPES = {
     '085': '01',
     '086': '03',
@@ -54,9 +47,6 @@ export const MAPEAMENTO_EQUIPES = {
     '87': '02'
 };
 
-/**
- * Definição completa das Equipes, Microáreas e seus códigos de busca
- */
 export const EQUIPES_CONFIG = [
     {
         equipeNome: 'Equipe 01',
