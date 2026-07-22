@@ -1,32 +1,20 @@
 # SIGSS-AutoIndex - Pipeline Inteligente de Impressão de Prontuários (FAA)
 
-> Extensão para Google Chrome desenvolvida por Guilherme Paicheco Ferreira para automatizar de maneira 100% transparente a enumeração dos prontuários emitidos pelo sistema SIGSS da Prefeitura de Betim.
+> Extensão para Google Chrome desenvolvida para automatizar de maneira 100% transparente a enumeração dos prontuários emitidos pelo sistema SIGSS da Prefeitura de Betim.
 
 ---
 
-## 🛠️ Correção Arquitetural do Bootstrap (v0.4.4 - RC-1.3)
+## 🛠️ Correção da Consulta Imobiliária (v0.4.5)
 
-A versão **v0.4.4** reestrutura completamente a injeção dos scripts da extensão. A solução anterior baseada em `chrome.runtime.getURL` em `document.createElement('script')` executando dentro do contexto `world: "MAIN"` dependia de APIs de extensão indisponíveis para scripts de páginas nativas no Google Chrome.
+A versão **v0.4.5** corrige o erro **HTTP 400 (Bad Request)** observado na homologação em campo durante a consulta ao endpoint `imobiliarioFamiliar2/lista`.
 
-Na v0.4.4, a injeção passa a ser realizada **diretamente pelo Manifest V3 do Chrome** declarando a sequência ordenada de scripts no array `content_scripts.js` com `"world": "MAIN"` e `"run_at": "document_start"`:
+### Análise Técnica da Causa Raiz
+O endpoint `imobiliarioFamiliar2/lista` do SIGSS é um controlador de grid Java (jqGrid). Quando a requisição continha apenas `?searchField=isen.isenCod&searchString=<codigo>`, o binding de dados do backend falhava por falta dos parâmetros estritos de paginação e estado do jqGrid (`_search`, `rows`, `page`, `sidx`, `sord`).
 
-```
-Chrome Manifest V3 (document_start em MAIN world)
-       │
-       ├── 1. lib/pdf-lib.min.js
-       ├── 2. src/constants.js
-       ├── 3. src/logger.js
-       ├── 4. src/equipes.js
-       ├── 5. src/utils.js
-       ├── 6. src/imovel.js
-       ├── 7. src/formatter.js
-       ├── 8. src/pdf.js
-       ├── 9. src/pipeline.js
-       ├── 10. src/interceptor.js  (Instala hooks transparentes e registrador)
-       └── 11. src/main.js         (Registra handler e expõe window.executarFluxoImpressao)
-```
-
-Essa arquitetura é 100% determinística, funciona nativamente sem requisições de rede para a extensão e garante que a variável `callbackImpressaoInterceptada` receba a referência da função `executarFluxoImpressao`.
+### Solução Aplicada
+1. Reconstrução completa da URL de busca utilizando a API `URLSearchParams` com todos os parâmetros obrigatórios e opcionais do jqGrid.
+2. Inclusão dos cabeçalhos HTTP de requisição AJAX (`X-Requested-With: XMLHttpRequest`, `Accept: application/json, text/javascript, */*; q=0.01`).
+3. Adição de instrumentação de diagnósticos HTTP (`[SIGSS] URL completa:`, `[SIGSS] Status HTTP:`, `[SIGSS] Body:`).
 
 ---
 
@@ -67,6 +55,7 @@ O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos 
 - [x] **v0.4.2 (RC-1.1)**: Correção do bootstrap de inicialização.
 - [x] **v0.4.3-debug (RC-1.2)**: Instrumentação completa de execução linha a linha.
 - [x] **v0.4.4 (RC-1.3)**: Reestruturação arquitetural do Bootstrap via injeção direta no `manifest.json`.
+- [x] **v0.4.5**: Correção da consulta imobiliária (`imobiliarioFamiliar2/lista`) com suporte completo aos parâmetros jqGrid e eliminação do HTTP 400.
 
 ---
 

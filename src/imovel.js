@@ -50,18 +50,50 @@ async function buscarImovelPorCodigoSigss(codigoSigss) {
             VISUALIZAR_IMOVEL: 'imobiliarioFamiliar/visualizar',
             GET_ISAD: 'imobiliarioFamiliar/getIsad'
         };
-        const params = new URLSearchParams({
-            searchField: 'isen.isenCod',
-            searchString: codigoSigss
+
+        const params = new URLSearchParams();
+        params.set('_search', 'true');
+        params.set('nd', String(Date.now()));
+        params.set('rows', '20');
+        params.set('page', '1');
+        params.set('sidx', 'isen.isenCod');
+        params.set('sord', 'asc');
+        params.set('searchField', 'isen.isenCod');
+        params.set('searchString', codigoSigss);
+        params.set('searchOper', 'eq');
+        params.set('area', '');
+        params.set('miar', '');
+        params.set('rifa', '');
+        params.set('filtroCondicaoFamiliar', '');
+
+        const urlCompleta = `${endpoints.LISTA_IMOVEL}?${params.toString()}`;
+        console.info("[SIGSS] URL completa:", urlCompleta);
+
+        const response = await fetch(urlCompleta, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
 
-        const url = `${endpoints.LISTA_IMOVEL}?${params.toString()}`;
-        const response = await fetch(url, { method: 'GET' });
-        if (!response.ok) {
+        console.info("[SIGSS] Status HTTP:", response.status);
+
+        const textResponse = await response.text();
+        console.info("[SIGSS] Body:", textResponse);
+
+        let data = null;
+        try {
+            data = JSON.parse(textResponse);
+            console.info("[SIGSS] JSON Parsed:", data);
+        } catch (eJson) {
+            console.info("[SIGSS] Primeiros 500 caracteres (HTML/Texto):", textResponse.substring(0, 500));
             return { status: 'NAO_ENCONTRADO' };
         }
 
-        const data = await response.json();
+        if (!response.ok || !data) {
+            return { status: 'NAO_ENCONTRADO' };
+        }
 
         const totalRecords = typeof data.records !== 'undefined' 
             ? Number(data.records) 
@@ -85,15 +117,18 @@ async function buscarImovelPorCodigoSigss(codigoSigss) {
             return { status: 'NAO_ENCONTRADO' };
         }
 
+        console.info("[SIGSS] imovPK localizado:", imovPK);
         return { status: 'SUCESSO', imovPK };
 
     } catch (e) {
+        console.error('[SIGSS] Erro em buscarImovelPorCodigoSigss:', e);
         return { status: 'NAO_ENCONTRADO' };
     }
 }
 
 async function visualizarImovel(imovPK) {
     try {
+        console.info("[SIGSS] visualizar() para imovPK:", imovPK);
         const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
             VISUALIZAR_IMOVEL: 'imobiliarioFamiliar/visualizar'
         };
@@ -103,7 +138,11 @@ async function visualizarImovel(imovPK) {
 
         const response = await fetch(endpoints.VISUALIZAR_IMOVEL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: formData.toString()
         });
 
@@ -119,6 +158,7 @@ async function visualizarImovel(imovPK) {
 
 async function obterDadosIsad(isadPK) {
     try {
+        console.info("[SIGSS] getIsad() para isadPK:", isadPK);
         const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
             GET_ISAD: 'imobiliarioFamiliar/getIsad'
         };
@@ -128,7 +168,11 @@ async function obterDadosIsad(isadPK) {
 
         const response = await fetch(endpoints.GET_ISAD, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: formData.toString()
         });
 
