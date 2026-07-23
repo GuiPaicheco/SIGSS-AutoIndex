@@ -402,15 +402,80 @@ function extrairImovPK(linha) {
 }
 
 function extrairIsadPK(data) {
+    if (!data) return null;
+
+    // 1. Padrões diretos anteriores
     if (data.isadPK && typeof data.isadPK.idp !== 'undefined' && typeof data.isadPK.ids !== 'undefined') {
         return { idp: data.isadPK.idp, ids: data.isadPK.ids };
     }
-    if (data.imov && data.imov.isadPK) {
+    if (data.imov && data.imov.isadPK && typeof data.imov.isadPK.idp !== 'undefined' && typeof data.imov.isadPK.ids !== 'undefined') {
         return { idp: data.imov.isadPK.idp, ids: data.imov.isadPK.ids };
     }
     if (typeof data.isadIdp !== 'undefined' && typeof data.isadIds !== 'undefined') {
         return { idp: data.isadIdp, ids: data.isadIds };
     }
+
+    // 2. Auditoria v0.5.2 - Navegação estrita em imov.domicilioList -> informacaoDomicilioList -> isadPK
+    if (data.imov && data.imov.domicilioList !== undefined) {
+        const domList = data.imov.domicilioList;
+        console.info("[SIGSS] response.imov.domicilioList:", domList);
+        if (domList && typeof domList === 'object') {
+            try {
+                console.info("[SIGSS] Object.keys(response.imov.domicilioList):", Object.keys(domList));
+            } catch (e) {}
+
+            const domObj = Array.isArray(domList) ? domList[0] : domList;
+
+            if (domObj && domObj.informacaoDomicilioList !== undefined) {
+                const infoDom = domObj.informacaoDomicilioList;
+                console.info("[SIGSS] response.imov.domicilioList.informacaoDomicilioList:", infoDom);
+                if (infoDom && typeof infoDom === 'object') {
+                    try {
+                        console.info("[SIGSS] Object.keys(informacaoDomicilioList):", Object.keys(infoDom));
+                    } catch (e) {}
+
+                    const infoObj = Array.isArray(infoDom) ? infoDom[0] : infoDom;
+                    if (infoObj) {
+                        if (infoObj.isadPK && typeof infoObj.isadPK.idp !== 'undefined' && typeof infoObj.isadPK.ids !== 'undefined') {
+                            const isadObj = { idp: infoObj.isadPK.idp, ids: infoObj.isadPK.ids };
+                            console.info("[SIGSS] ISAD encontrado:", isadObj);
+                            return isadObj;
+                        } else if (typeof infoObj.isadIdp !== 'undefined' && typeof infoObj.isadIds !== 'undefined') {
+                            const isadObj = { idp: infoObj.isadIdp, ids: infoObj.isadIds };
+                            console.info("[SIGSS] ISAD encontrado:", isadObj);
+                            return isadObj;
+                        } else {
+                            try {
+                                console.info("[SIGSS] Propriedades existentes de informacaoDomicilioList:", Object.keys(infoObj));
+                            } catch (e) {}
+                        }
+                    }
+                }
+            } else if (domList.informacaoDomicilioList !== undefined) {
+                const infoDom = domList.informacaoDomicilioList;
+                console.info("[SIGSS] response.imov.domicilioList.informacaoDomicilioList:", infoDom);
+                if (infoDom && typeof infoDom === 'object') {
+                    try {
+                        console.info("[SIGSS] Object.keys(informacaoDomicilioList):", Object.keys(infoDom));
+                    } catch (e) {}
+
+                    const infoObj = Array.isArray(infoDom) ? infoDom[0] : infoDom;
+                    if (infoObj) {
+                        if (infoObj.isadPK && typeof infoObj.isadPK.idp !== 'undefined' && typeof infoObj.isadPK.ids !== 'undefined') {
+                            const isadObj = { idp: infoObj.isadPK.idp, ids: infoObj.isadPK.ids };
+                            console.info("[SIGSS] ISAD encontrado:", isadObj);
+                            return isadObj;
+                        } else {
+                            try {
+                                console.info("[SIGSS] Propriedades existentes de informacaoDomicilioList:", Object.keys(infoObj));
+                            } catch (e) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     return null;
 }
 

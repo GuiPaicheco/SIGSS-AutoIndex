@@ -2,6 +2,13 @@
 
 Todas as alterações notáveis deste projeto serão documentadas neste arquivo.
 
+## [0.5.2] - 2026-07-23
+
+### Adicionado
+- Expansão estrita do caminho `response.imov.domicilioList` → `informacaoDomicilioList` → `isadPK` no módulo `src/imovel.js`.
+- Logs sequenciais obrigatórios no DevTools (`console.info`) registrando `domicilioList`, suas chaves `Object.keys()`, `informacaoDomicilioList`, suas chaves e a validação do objeto `isadPK`.
+- Preservados integralmente os módulos Bootstrap, Interceptor, Pipeline, Formatter e PDF.
+
 ## [0.5.1] - 2026-07-22
 
 ### Adicionado

@@ -4,12 +4,12 @@
 
 ---
 
-## 🔬 Auditoria Completa da Cadeia Imobiliária (v0.5.1)
+## 🔬 Auditoria Expandida do Domicílio e ISAD (v0.5.2)
 
-A versão **v0.5.1** adiciona a **instrumentação de auditoria em 10 etapas** sobre o fluxo `visualizar()` → `getIsad()` → `formatter()`.
+A versão **v0.5.2** expande a auditoria de extração do `isadPK` sobre o retorno de `imobiliarioFamiliar/visualizar`.
 
-### Objetivo da Auditoria
-Capturar a resposta bruta e o JSON integral retornado pelos endpoints do SIGSS (`imobiliarioFamiliar/visualizar` e `imobiliarioFamiliar/getIsad`), permitindo mapear com exatidão o formato e a localização do objeto `isadPK` e das propriedades cadastrais do domicílio em ambiente de produção na UBS.
+### Objetivo da Auditoria v0.5.2
+Navegar estritamente pela estrutura `response.imov.domicilioList.informacaoDomicilioList.isadPK`, capturando e registrando cada sub-objeto no DevTools (`console.info`) e verificando se `isadPK` é localizado na hierarquia do domicílio.
 
 Consulte a documentação completa da auditoria em [**docs/AUDITORIA_ISAD.md**](docs/AUDITORIA_ISAD.md).
 
@@ -55,6 +55,7 @@ O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos 
 - [x] **v0.4.5**: Correção da consulta imobiliária (`imobiliarioFamiliar2/lista`) com parâmetros do jqGrid.
 - [x] **v0.5.0**: Nova estratégia de localização do imóvel via busca paralela simultânea por microáreas (`Promise.all`).
 - [x] **v0.5.1**: Instrumentação de auditoria completa da cadeia `visualizar()` → `getIsad()` → `formatter()`.
+- [x] **v0.5.2**: Expansão e auditoria estrita do caminho `domicilioList` → `informacaoDomicilioList` → `isadPK`.
 
 ---
 
