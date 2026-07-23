@@ -1,4 +1,4 @@
-# SIGSS-AutoIndex — Pipeline Inteligente de Impressão de Prontuários (FAA)
+# SIGSS-AutoIndex - Pipeline Inteligente de Impressão de Prontuários (FAA)
 
 [![Release](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/GuiPaicheco/SIGSS-AutoIndex/releases/tag/v1.0.0)
 [![Manifest](https://img.shields.io/badge/chrome-Manifest_V3-green.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
@@ -166,7 +166,7 @@ Para o histórico completo de versões anteriores (v0.1.0 a v0.5.3), consulte o 
 - **Autor Principal**: Guilherme Paicheco Ferreira
 - **Cargo**: Servidor Público Municipal
 - **Instituição**: Prefeitura Municipal de Betim / Secretaria Municipal de Saúde
-- **Atuação**: Arquitetura, Desenvolvimento, Testes e Homologação.
+- **Atuação**: Oficial de Apoio a Saúde
 
 ---
 

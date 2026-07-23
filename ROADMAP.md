@@ -28,4 +28,3 @@ Este documento apresenta o histórico de conquistas do projeto **SIGSS-AutoIndex
 ## 🔵 Ideias Futuras
 
 - [ ] **Suporte a Outros Documentos do SIGSS**: Avaliação de viabilidade para extensão da enumeração automática a guias de encaminhamento e receitas.
-- [ ] **Painel Administrativo Local**: Extensão com dashboard para conferência de métricas sem armazenamento de dados de pacientes.
