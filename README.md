@@ -4,12 +4,12 @@
 
 ---
 
-## 🔬 Auditoria Expandida do Domicílio e ISAD (v0.5.2)
+## 🔬 Correção da Leitura do JSON em `getIsad()` (v0.5.3)
 
-A versão **v0.5.2** expande a auditoria de extração do `isadPK` sobre o retorno de `imobiliarioFamiliar/visualizar`.
+A versão **v0.5.3** corrige a leitura do objeto JSON retornado pelo endpoint `imobiliarioFamiliar/getIsad`.
 
-### Objetivo da Auditoria v0.5.2
-Navegar estritamente pela estrutura `response.imov.domicilioList.informacaoDomicilioList.isadPK`, capturando e registrando cada sub-objeto no DevTools (`console.info`) e verificando se `isadPK` é localizado na hierarquia do domicílio.
+### Análise Técnica
+As respostas do backend envelopam os atributos dentro de `response.isad` (`response.isad.area.areaCod`, `response.isad.microArea.miarCod`, `response.isad.isadNumFamiliaSiab`). A v0.5.3 adiciona a inspeção prévia completa dessas chaves no DevTools (`console.info`) e constrói o objeto cadastral lendo diretamente da estrutura `isad`.
 
 Consulte a documentação completa da auditoria em [**docs/AUDITORIA_ISAD.md**](docs/AUDITORIA_ISAD.md).
 
@@ -56,6 +56,7 @@ O **SIGSS-AutoIndex** insere automaticamente no topo dos prontuários impressos 
 - [x] **v0.5.0**: Nova estratégia de localização do imóvel via busca paralela simultânea por microáreas (`Promise.all`).
 - [x] **v0.5.1**: Instrumentação de auditoria completa da cadeia `visualizar()` → `getIsad()` → `formatter()`.
 - [x] **v0.5.2**: Expansão e auditoria estrita do caminho `domicilioList` → `informacaoDomicilioList` → `isadPK`.
+- [x] **v0.5.3**: Leitura inspecionada da estrutura `response.isad` no retorno de `getIsad()`.
 
 ---
 

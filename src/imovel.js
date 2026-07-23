@@ -330,40 +330,78 @@ async function obterDadosIsad(isadPK) {
             return null;
         }
 
-        // Somente depois do log acessa as propriedades
-        const areaCod = data.areaCod || (data.area && data.area.areaCod);
-        const miarCod = data.miarCod || (data.microArea && data.microArea.miarCod);
-        const isadNumFamiliaSiab = data.isadNumFamiliaSiab || (data.isad && data.isad.isadNumFamiliaSiab);
+        // v0.5.3: Inspeção detalhada de response.isad
+        const isadObj = (data && data.isad) ? data.isad : data;
 
-        if (!areaCod || !miarCod || typeof isadNumFamiliaSiab === 'undefined') {
-            console.error("[SIGSS][ERRO] Propriedades do ISAD incompletas no JSON de getIsad():", {
-                arquivo: 'src/imovel.js',
-                funcao: 'obterDadosIsad',
-                linhaAproximada: 290,
-                areaCod,
-                miarCod,
-                isadNumFamiliaSiab,
-                data
-            });
-            if (data && typeof data === 'object') {
+        if (isadObj) {
+            console.info("[SIGSS] response.isad:", isadObj);
+            try {
+                console.info("[SIGSS] Object.keys(response.isad):", Object.keys(isadObj));
+            } catch (e) {}
+
+            const areaObj = isadObj.area || (data && data.area);
+            const microAreaObj = isadObj.microArea || (data && data.microArea);
+
+            console.info("[SIGSS] response.isad.area:", areaObj);
+            console.info("[SIGSS] response.isad.microArea:", microAreaObj);
+
+            if (areaObj && typeof areaObj === 'object') {
                 try {
-                    console.info("[SIGSS] Chaves do JSON retornado por getIsad():", Object.keys(data));
-                } catch (eKeys) {}
+                    console.info("[SIGSS] Object.keys(response.isad.area):", Object.keys(areaObj));
+                } catch (e) {}
+            } else {
+                console.info("[SIGSS] Objeto area completo (não-objeto):", areaObj);
             }
+
+            if (microAreaObj && typeof microAreaObj === 'object') {
+                try {
+                    console.info("[SIGSS] Object.keys(response.isad.microArea):", Object.keys(microAreaObj));
+                } catch (e) {}
+            } else {
+                console.info("[SIGSS] Objeto microArea completo (não-objeto):", microAreaObj);
+            }
+
+            const areaCod = (areaObj && areaObj.areaCod) || isadObj.areaCod || (data && data.areaCod);
+            const miarCod = (microAreaObj && microAreaObj.miarCod) || isadObj.miarCod || (data && data.miarCod);
+            const isadNumFamiliaSiab = isadObj.isadNumFamiliaSiab !== undefined 
+                ? isadObj.isadNumFamiliaSiab 
+                : (data && data.isadNumFamiliaSiab);
+
+            const objetoResultante = {
+                areaCod: areaCod !== undefined ? String(areaCod) : undefined,
+                miarCod: miarCod !== undefined ? String(miarCod) : undefined,
+                isadNumFamiliaSiab: isadNumFamiliaSiab !== undefined ? String(isadNumFamiliaSiab) : undefined
+            };
+
+            console.info("[SIGSS] Objeto ISAD montado:", objetoResultante);
+
+            if (!areaCod || !miarCod || typeof isadNumFamiliaSiab === 'undefined') {
+                console.error("[SIGSS][ERRO] Propriedades do ISAD incompletas no JSON de getIsad():", {
+                    arquivo: 'src/imovel.js',
+                    funcao: 'obterDadosIsad',
+                    linhaAproximada: 360,
+                    areaCod,
+                    miarCod,
+                    isadNumFamiliaSiab,
+                    isadObj,
+                    areaObj,
+                    microAreaObj,
+                    data
+                });
+                return null;
+            }
+
+            return objetoResultante;
+        } else {
+            console.error("[SIGSS][ERRO] Objeto response.isad inexistente no JSON retornado por getIsad():", data);
             return null;
         }
-
-        return {
-            areaCod: String(areaCod),
-            miarCod: String(miarCod),
-            isadNumFamiliaSiab: String(isadNumFamiliaSiab)
-        };
 
     } catch (erro) {
         console.error('[SIGSS][ERRO] Exceção capturada em obterDadosIsad:', {
             arquivo: 'src/imovel.js',
             funcao: 'obterDadosIsad',
-            linhaAproximada: 315,
+            linhaAproximada: 375,
             objetoRecebido: isadPK,
             erro: erro
         });
