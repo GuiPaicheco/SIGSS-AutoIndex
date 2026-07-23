@@ -1,5 +1,28 @@
-console.info("[SIGSS] formatter carregado");
+/**
+ * SIGSS-AutoIndex
+ *
+ * Sistema de enumeração automática de prontuários (FAA)
+ * para o SIGSS da Prefeitura Municipal de Betim.
+ *
+ * Desenvolvido por:
+ * Guilherme Paicheco Ferreira
+ *
+ * Projeto iniciado em 2026.
+ *
+ * Versão:
+ * 1.0.0
+ *
+ * Licença:
+ * MIT
+ */
 
+/**
+ * Formata os dados cadastrais do imóvel no padrão oficial de enumeração SIGSS.
+ * Padrão: CódigoEquipe_MicroArea_NumeroFamilia_SufixoEquipe (ex: "086_03_018_03").
+ *
+ * @param {Object|string} dados Dados cadastrais ou mensagem de estado
+ * @returns {string} String formatada de enumeração
+ */
 function formatarEnumeracao(dados) {
     const msgs = (typeof window !== 'undefined' && window.MENSAGENS_ENUMERACAO) || {
         NAO_ENCONTRADO: 'Não encontrado em imóvel',
@@ -41,7 +64,8 @@ function formatarEnumeracao(dados) {
         return `${codigoEquipeFormatado}_${microAreaFormatada}_${numeroFamiliaFormatado}_${sufixoEquipe}`;
 
     } catch (e) {
-        console.error('[SIGSS] Erro em formatarEnumeracao:', e);
+        const logger = (typeof window !== 'undefined' && window.Logger) || (typeof Logger !== 'undefined' ? Logger : console);
+        logger.error('[SIGSS] Erro em formatarEnumeracao:', e);
         return msgs.NAO_ENCONTRADO;
     }
 }

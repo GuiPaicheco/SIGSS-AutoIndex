@@ -1,4 +1,20 @@
-console.info("[SIGSS] 01 - interceptor.js carregado");
+/**
+ * SIGSS-AutoIndex
+ *
+ * Sistema de enumeração automática de prontuários (FAA)
+ * para o SIGSS da Prefeitura Municipal de Betim.
+ *
+ * Desenvolvido por:
+ * Guilherme Paicheco Ferreira
+ *
+ * Projeto iniciado em 2026.
+ *
+ * Versão:
+ * 1.0.0
+ *
+ * Licença:
+ * MIT
+ */
 
 (function () {
     'use strict';
@@ -15,34 +31,38 @@ console.info("[SIGSS] 01 - interceptor.js carregado");
     let callbackImpressaoInterceptada = null;
 
     /**
-     * Registrador do Handler (Etapa 5)
+     * Registra o manipulador do pipeline de impressão.
+     * @param {Function} handler Função orquestradora do pipeline
      */
     window.__SIGSS_PLUS_REGISTRAR_HANDLER__ = function (handler) {
-        console.info("[SIGSS] Handler recebido");
-        console.info(handler);
-        console.info(typeof handler);
+        const logger = (typeof window !== 'undefined' && window.Logger) || null;
+        if (logger) {
+            logger.info('Handler de impressão registrado no interceptor.');
+        }
         callbackImpressaoInterceptada = handler;
     };
-    console.info("[SIGSS] 03 - registrador criado");
 
     /**
-     * Instala a sobrescrita do window.open (Etapa 4)
+     * Função substituta transparente para window.open.
+     * Intercepta a abertura de relatórios PDF do SIGSS e redireciona para o pipeline.
      */
     const interceptedOpen = function (url, name, specs) {
-        console.info("[SIGSS] OPEN chamado", url);
-        console.info("[SIGSS] callback =", callbackImpressaoInterceptada);
-        console.info("[SIGSS] typeof callback =", typeof callbackImpressaoInterceptada);
+        const logger = (typeof window !== 'undefined' && window.Logger) || null;
+        if (logger) {
+            logger.debug('window.open chamado:', url);
+        }
 
         const isReportPdf = (typeof url === 'string') && (url.includes('/sigss/arquivo/') || url.endsWith('.pdf'));
 
         if ((capturarProximoReport || isReportPdf) && typeof callbackImpressaoInterceptada === 'function') {
-            console.info("[SIGSS] entrando no Pipeline");
+            if (logger) {
+                logger.info('Impressão interceptada. Redirecionando para o pipeline.');
+            }
             capturarProximoReport = false;
             callbackImpressaoInterceptada(url, name, specs, ORIGINAL_OPEN);
             return null;
         }
 
-        console.info("[SIGSS] abrindo PDF original");
         return ORIGINAL_OPEN.apply(window, arguments);
     };
 
@@ -51,10 +71,9 @@ console.info("[SIGSS] 01 - interceptor.js carregado");
     };
 
     window.open = interceptedOpen;
-    console.info("[SIGSS] 02 - window.open interceptado");
 
     /**
-     * Intercepta XMLHttpRequest
+     * Intercepta XMLHttpRequest para sinalizar requisições ao endpoint de impressão do FAA.
      */
     const originalXhrOpen = XMLHttpRequest.prototype.open;
     const originalXhrSend = XMLHttpRequest.prototype.send;
@@ -80,7 +99,7 @@ console.info("[SIGSS] 01 - interceptor.js carregado");
     };
 
     /**
-     * Intercepta Fetch API
+     * Intercepta a Fetch API para garantir sinalização caso o SIGSS utilize fetch.
      */
     const originalFetch = window.fetch;
     if (typeof originalFetch === 'function') {
@@ -104,6 +123,4 @@ console.info("[SIGSS] 01 - interceptor.js carregado");
             return response;
         };
     }
-
-    console.info("[SIGSS] 04 - iniciando bootstrap");
 })();

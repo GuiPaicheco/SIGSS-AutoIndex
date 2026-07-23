@@ -1,6 +1,6 @@
-# Guia de Homologação e Teste Real em UBS - SIGSS-AutoIndex (v0.4.1)
+# Guia de Homologação e Teste Real em UBS — SIGSS-AutoIndex (v1.0.0)
 
-Este documento orienta a equipe de saúde e TI sobre como realizar o primeiro teste funcional do **SIGSS-AutoIndex** no ambiente real de produção do SIGSS em uma Unidade Básica de Saúde (UBS) da Prefeitura de Betim.
+Este documento orienta a equipe de saúde e TI sobre como realizar o teste funcional do **SIGSS-AutoIndex** no ambiente real de produção do SIGSS em uma Unidade Básica de Saúde (UBS) da Prefeitura de Betim.
 
 ---
 
@@ -25,7 +25,7 @@ Utilize o checklist abaixo durante o teste prático no computador da UBS:
 - [ ] **4. Imprimir FAA**:
   - Concluir o atendimento e clicar no botão habitual de impressão da FAA (`imprimirFaaSemPin`).
 - [ ] **5. Conferir enumeração**:
-  - Verificar se a linha de enumeração no formato `CódigoEquipe_Micro_NúmeroFamília_NúmeroEquipe` (ex: `086_03_018_03`) foi gerada.
+  - Verificar se a linha de enumeração no formato `CódigoEquipe_Micro_NúmeroFamília_SufixoEquipe` (ex: `086_03_018_03`) foi gerada.
 - [ ] **6. Conferir posição**:
   - Confirmar se a enumeração aparece **no topo da primeira página, centralizada horizontalmente**, sem sobrepor a logomarca ou cabeçalho original do SIGSS.
 - [ ] **7. Conferir impressão**:
@@ -36,14 +36,3 @@ Utilize o checklist abaixo durante o teste prático no computador da UBS:
   - Pressionar `F12` no Chrome, ativar `DEBUG_MODE = true` em `src/constants.js` (se desejado) e verificar os logs com o prefixo `[SIGSS-AutoIndex]`.
 - [ ] **10. Conferir tempo**:
   - Garantir que o tempo total entre o clique em "Imprimir" e a exibição do PDF seja imperceptível (abaixo de 200 milissegundos).
-
----
-
-## 🛠️ Ativação do Modo de Depuração Detalhada (`DEBUG_MODE`)
-
-Caso precise inspecionar os tempos e retornos exatos de cada etapa da consulta imobiliária:
-
-1. Abra o arquivo `src/constants.js`.
-2. Altere `export const DEBUG_MODE = false;` para `export const DEBUG_MODE = true;`.
-3. Recarregue a extensão em `chrome://extensions/`.
-4. No console do DevTools (`F12`), filtre por `[SIGSS-AutoIndex]`.

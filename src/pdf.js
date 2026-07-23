@@ -1,5 +1,27 @@
-console.info("[SIGSS] pdf carregado");
+/**
+ * SIGSS-AutoIndex
+ *
+ * Sistema de enumeração automática de prontuários (FAA)
+ * para o SIGSS da Prefeitura Municipal de Betim.
+ *
+ * Desenvolvido por:
+ * Guilherme Paicheco Ferreira
+ *
+ * Projeto iniciado em 2026.
+ *
+ * Versão:
+ * 1.0.0
+ *
+ * Licença:
+ * MIT
+ */
 
+/**
+ * Baixa o documento PDF original do servidor SIGSS em memória.
+ *
+ * @param {string} urlPdfOriginal URL do relatório PDF
+ * @returns {Promise<ArrayBuffer>} ArrayBuffer contendo os bytes do PDF
+ */
 async function baixarPdf(urlPdfOriginal) {
     const response = await fetch(urlPdfOriginal);
     if (!response.ok) {
@@ -8,6 +30,13 @@ async function baixarPdf(urlPdfOriginal) {
     return await response.arrayBuffer();
 }
 
+/**
+ * Edita o documento PDF em memória, carimbando a string de enumeração no topo centralizado da 1ª página.
+ *
+ * @param {ArrayBuffer} arrayBuffer ArrayBuffer do PDF original
+ * @param {string} textoEnumeracao String de enumeração a ser gravada
+ * @returns {Promise<ArrayBuffer>} ArrayBuffer do PDF modificado
+ */
 async function editarPdf(arrayBuffer, textoEnumeracao) {
     const pdfLib = (typeof window !== 'undefined' && window.PDFLib) || (typeof global !== 'undefined' && global.PDFLib);
     if (!pdfLib) {
@@ -41,6 +70,13 @@ async function editarPdf(arrayBuffer, textoEnumeracao) {
     return pdfBytes.buffer;
 }
 
+/**
+ * Abre a janela do navegador exibindo o PDF modificado a partir de uma Blob URL temporária.
+ *
+ * @param {ArrayBuffer} arrayBufferModificado ArrayBuffer do PDF editado
+ * @param {Function} windowOpenOriginal Referência da função window.open original
+ * @returns {Window|null} Objeto da janela aberta
+ */
 function abrirPdf(arrayBufferModificado, windowOpenOriginal) {
     const blob = new Blob([arrayBufferModificado], { type: 'application/pdf' });
     const blobUrl = URL.createObjectURL(blob);

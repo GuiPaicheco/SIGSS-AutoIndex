@@ -1,3 +1,26 @@
+/**
+ * SIGSS-AutoIndex
+ *
+ * Sistema de enumeração automática de prontuários (FAA)
+ * para o SIGSS da Prefeitura Municipal de Betim.
+ *
+ * Desenvolvido por:
+ * Guilherme Paicheco Ferreira
+ *
+ * Projeto iniciado em 2026.
+ *
+ * Versão:
+ * 1.0.0
+ *
+ * Licença:
+ * MIT
+ */
+
+/**
+ * Retorna a lista plana de todas as microáreas cadastradas para busca paralela.
+ *
+ * @returns {Array<{codigoESF: string, area: string, sufixoEquipe: string, microNumero: string, microCodigo: string}>}
+ */
 function getListaTodasMicroareas() {
     let config = [];
     if (typeof window !== 'undefined' && window.EQUIPES_CONFIG) {
@@ -25,6 +48,12 @@ function getListaTodasMicroareas() {
     return lista;
 }
 
+/**
+ * Retorna o sufixo numérico de equipe associado ao Código ESF/Área.
+ *
+ * @param {string} codigoESF
+ * @returns {string|null}
+ */
 function getSufixoEquipePorESF(codigoESF) {
     let mapa = null;
     if (typeof window !== 'undefined' && window.MAPEAMENTO_EQUIPES) {

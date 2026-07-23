@@ -1,54 +1,60 @@
-# Arquitetura do Sistema - SIGSS-AutoIndex (v0.4.2)
+# Arquitetura do Sistema — SIGSS-AutoIndex (v1.0.0)
 
-O **SIGSS-AutoIndex** adota uma arquitetura modular em **JavaScript Moderno (ES2022+)** construída sob as especificações do **Chrome Extension Manifest V3**.
-
----
-
-## 🚀 Mecanismo de Inicialização e Bootstrap (`world: "MAIN"`)
-
-No Manifest V3 do Google Chrome, os `content_scripts` declarados no `manifest.json` executam como scripts clássicos do navegador (sem suporte nativo a declarações de `import / export` de módulos ES6 em alto nível).
-
-Para resolver essa limitação e garantir a execução modular no mundo de execução principal (`world: "MAIN"`):
-
-```
-Chrome (manifest.json)
-       │ (document_start em MAIN world)
-       ▼
-src/interceptor.js  (Script Clássico - Instala hooks de window.open, XHR e fetch)
-       │
-       ▼ (Cria e injeta <script type="module" src="chrome-extension://.../src/main.js">)
-DOM da Página (head / documentElement)
-       │
-       ▼ (Resolução recursiva nativa dos imports ES6 pelo Chrome)
-src/main.js ──► src/pipeline.js ──► src/utils.js / src/imovel.js / src/formatter.js / src/pdf.js
-```
+O **SIGSS-AutoIndex** adota uma arquitetura modular em **JavaScript Moderno** construída sob as especificações do **Google Chrome Extension Manifest V3**.
 
 ---
 
-## 🏛️ Visão Geral da Arquitetura
+## 🚀 Mecanismo de Inicialização e Injeção Declarativa (`world: "MAIN"`)
 
-O sistema utiliza o padrão de **Pipeline Desacoplado**, em que cada módulo possui responsabilidade única:
+No Manifest V3 do Google Chrome, a injeção no contexto de execução nativo da página do SIGSS (`world: "MAIN"`) é configurada de forma declarativa e determinística no `manifest.json` com execução no momento `document_start`:
 
 ```
-                  ┌──────────────────────┐
-                  │    interceptor.js    │ (Hook na impressão e Bootstrap)
-                  └──────────┬───────────┘
-                             │ (Injeta <script type="module">)
-                             ▼
-                  ┌──────────────────────┐
-                  │       main.js        │ (Registra Handler & window.executarFluxoImpressao)
-                  └──────────┬───────────┘
-                             │
-                             ▼
-                  ┌──────────────────────┐
-                  │     pipeline.js      │ (Orquestrador Único)
-                  └──────────┬───────────┘
-                             │
+Google Chrome Manifest V3 (document_start em MAIN world)
+       │
+       ├── 1. lib/pdf-lib.min.js     (Biblioteca de edição PDF em memória)
+       ├── 2. src/constants.js       (Endpoints, seletores CSS e configurações)
+       ├── 3. src/logger.js          (Abstração central de logging)
+       ├── 4. src/equipes.js         (Mapeamento de Equipes de Saúde da Família e Microáreas)
+       ├── 5. src/utils.js           (Extração do Código SIGSS via Input e PDF)
+       ├── 6. src/imovel.js          (Busca paralela por microáreas e consultas imobiliárias)
+       ├── 7. src/formatter.js       (Formatador da enumeração oficial)
+       ├── 8. src/pdf.js             (Baixar, carimbar via pdf-lib e abrir PDF)
+       ├── 9. src/pipeline.js        (Orquestrador do Pipeline de Impressão)
+       ├── 10. src/interceptor.js    (Hook transparente em window.open, XHR e fetch)
+       └── 11. src/main.js           (Ponto de entrada: registra handler e expõe window)
+```
+
+---
+
+## 🏛️ Visão Geral da Arquitetura do Pipeline
+
+O sistema adota o padrão de **Pipeline Desacoplado**, em que cada módulo possui responsabilidade única e isolada:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           SIGSS-AutoIndex                               │
+└────────────────────────────────────┬────────────────────────────────────┘
+                                     │ (Interceptação de window.open no FAA)
+                                     ▼
+                        ┌─────────────────────────┐
+                        │     interceptor.js      │
+                        └────────────┬────────────┘
+                                     │
+                                     ▼
+                        ┌─────────────────────────┐
+                        │        main.js          │
+                        └────────────┬────────────┘
+                                     │
+                                     ▼
+                        ┌─────────────────────────┐
+                        │       pipeline.js       │
+                        └────────────┬────────────┘
+                                     │
        ┌─────────────────────┼─────────────────────┬─────────────────────┐
        ▼                     ▼                     ▼                     ▼
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
 │   utils.js   │     │  imovel.js   │     │ formatter.js │     │    pdf.js    │
-│(Código SIGSS)│     │  (Integração)│     │(Formatação)  │     │(Edição PDF)  │
+│(Código SIGSS)│     │(Busca 13x MS)│     │(Formatação)  │     │ (Carimbo PDF)│
 └──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
 ```
 
@@ -58,20 +64,21 @@ O sistema utiliza o padrão de **Pipeline Desacoplado**, em que cada módulo pos
 
 | Módulo | Arquivo | Responsabilidade Única |
 | :--- | :--- | :--- |
-| **Interceptor & Bootstrap** | `src/interceptor.js` | Sobrescrever `window.open`, `XMLHttpRequest`, `fetch` e injetar dinamicamente `src/main.js` como módulo ES6. |
-| **Ponto de Entrada** | `src/main.js` | Registrar o pipeline em `window.__SIGSS_PLUS_REGISTRAR_HANDLER__` e expor `window.executarFluxoImpressao`. |
-| **Pipeline** | `src/pipeline.js` | Orquestrar o sequenciamento do processamento e garantir o fallback imediato para o PDF original em caso de falha. |
-| **Utilitários** | `src/utils.js` | Extrair o Código SIGSS com prioridade estrita (Input da tela → Documento PDF). |
-| **Integração Imobiliária** | `src/imovel.js` | Executar a cadeia HTTP (`lista` → `visualizar` → `getIsad`) para obter os identificadores do domicílio. |
-| **Formatador** | `src/formatter.js` | Converter os dados cadastrais do imóvel na string oficial de enumeração (ex: `086_03_018_03`). |
-| **Manipulador PDF** | `src/pdf.js` | Baixar o PDF original, carimbar a linha no topo centralizado via `pdf-lib` em memória e abrir a janela. |
-| **Logger** | `src/logger.js` | Controlar centralizadamente os logs acoplados ao `DEBUG_MODE`. |
-| **Constantes** | `src/constants.js` | Centralizar URLs, `DEBUG_MODE`, seletores CSS dos inputs e mapeamentos de equipes/ESF. |
+| **Constantes** | `src/constants.js` | Centralizar URLs, seletores CSS dos inputs, mensagens padrão e mapeamentos de equipes/ESF. |
+| **Logger** | `src/logger.js` | Controlar centralizadamente a emissão de logs (`info`, `debug`, `warn`, `error`) acoplados à flag `DEBUG_MODE`. |
+| **Equipes** | `src/equipes.js` | Mapear as 13 microáreas das Equipes de Saúde da Família e resolver sufixos de equipe. |
+| **Utilitários** | `src/utils.js` | Extrair o Código SIGSS com prioridade estrita (1º Input da tela → 2º Documento PDF). |
+| **Integração Imobiliária** | `src/imovel.js` | Executar a busca paralela em 13 microáreas (`Promise.all`) e a cadeia `visualizar` → `getIsad`. |
+| **Formatador** | `src/formatter.js` | Converter os atributos do ISAD na string oficial de enumeração (ex: `086_03_018_03`). |
+| **Manipulador PDF** | `src/pdf.js` | Baixar o PDF original, carimbar a linha no topo centralizado via `pdf-lib` em memória e exibir o Blob. |
+| **Pipeline** | `src/pipeline.js` | Orquestrar o fluxo de impressão e garantir a execução da política de fallback ao PDF original em qualquer exceção. |
+| **Interceptor** | `src/interceptor.js` | Instalar os hooks transparentes sobre `window.open`, `XMLHttpRequest` e `fetch`. |
+| **Ponto de Entrada** | `src/main.js` | Conectar o pipeline ao registrador do interceptor e expor `window.executarFluxoImpressao`. |
 
 ---
 
 ## 🔒 Garantias de Segurança e Execução
 
 1. **Evidência de Interceptação**: `window.open.toString()` retorna `'function open() { [SIGSS-AutoIndex Interceptor Active] }'`.
-2. **Exposição Controlada no Window**: `typeof window.executarFluxoImpressao` retorna `'function'`.
-3. **Múltiplos Módulos Visíveis no DevTools Sources**: Todos os arquivos ES Module (`main.js`, `pipeline.js`, `utils.js`, `imovel.js`, `formatter.js`, `pdf.js`) são visíveis no painel *Sources* sob o domínio da extensão.
+2. **Exposição Controlada**: `typeof window.executarFluxoImpressao` retorna `'function'`.
+3. **Resiliência Crítica (Fallback Garantido)**: Se ocorrer qualquer falha no pipeline, o PDF original não modificado é aberto para o usuário sem interrupção do atendimento.

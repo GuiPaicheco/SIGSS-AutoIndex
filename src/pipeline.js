@@ -1,7 +1,38 @@
-console.info("[SIGSS] 15 - pipeline carregado");
+/**
+ * SIGSS-AutoIndex
+ *
+ * Sistema de enumeração automática de prontuários (FAA)
+ * para o SIGSS da Prefeitura Municipal de Betim.
+ *
+ * Desenvolvido por:
+ * Guilherme Paicheco Ferreira
+ *
+ * Projeto iniciado em 2026.
+ *
+ * Versão:
+ * 1.0.0
+ *
+ * Licença:
+ * MIT
+ */
 
+/**
+ * Orquestrador principal do Pipeline Inteligente de Impressão.
+ * Sequencia as chamadas de obtenção do Código SIGSS, busca cadastral do imóvel,
+ * formatação da enumeração, edição do PDF em memória e exibição ao usuário.
+ * Em caso de falha em qualquer etapa, dispara a política de fallback abrindo o PDF original.
+ *
+ * @param {string} reportUrl URL do relatório PDF do SIGSS
+ * @param {string} windowName Nome da janela de destino
+ * @param {string} windowSpecs Especificações da janela
+ * @param {Function} windowOpenOriginal Referência da função window.open nativa
+ */
 async function executarFluxoImpressao(reportUrl, windowName, windowSpecs, windowOpenOriginal) {
-    console.info("[SIGSS] 16 - pipeline iniciado");
+    const logger = (typeof window !== 'undefined' && window.Logger) || null;
+    if (logger) {
+        logger.info('Pipeline de impressão iniciado:', reportUrl);
+    }
+
     const fnOpen = windowOpenOriginal || window.open;
 
     const fnObterCodigo = (typeof window !== 'undefined' && window.obterCodigoSIGSS) || (typeof obterCodigoSIGSS !== 'undefined' ? obterCodigoSIGSS : null);
@@ -12,31 +43,29 @@ async function executarFluxoImpressao(reportUrl, windowName, windowSpecs, window
     const fnAbrirPdf = (typeof window !== 'undefined' && window.abrirPdf) || (typeof abrirPdf !== 'undefined' ? abrirPdf : null);
 
     try {
-        console.info("[SIGSS] 17 - obtendo código SIGSS");
         const codigoSigss = await fnObterCodigo(reportUrl);
-
-        console.info("[SIGSS] 18 - pesquisando imóvel");
         const resultadoImovel = await fnPesquisarImovel(codigoSigss);
-
-        console.info("[SIGSS] 19 - formatando enumeração");
         const textoEnumeracao = fnFormatar(resultadoImovel);
 
         const pdfArrayBuffer = await fnBaixarPdf(reportUrl);
-
-        console.info("[SIGSS] 20 - editando PDF");
         const pdfModificadoArrayBuffer = await fnEditarPdf(pdfArrayBuffer, textoEnumeracao);
 
-        console.info("[SIGSS] 21 - abrindo PDF");
         fnAbrirPdf(pdfModificadoArrayBuffer, fnOpen);
 
-        console.info("[SIGSS] 22 - pipeline concluído");
+        if (logger) {
+            logger.info('Pipeline concluído com sucesso. Enumeração gravada:', textoEnumeracao);
+        }
 
     } catch (erro) {
-        console.error('[SIGSS] Erro no pipeline:', erro);
+        if (logger) {
+            logger.error('Falha no pipeline. Ativando fallback para PDF original:', erro);
+        }
         try {
             fnOpen(reportUrl, windowName || '_blank', windowSpecs);
         } catch (eFallback) {
-            console.error('[SIGSS] Erro no fallback:', eFallback);
+            if (logger) {
+                logger.error('Erro ao executar fallback:', eFallback);
+            }
         }
     }
 }

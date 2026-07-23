@@ -1,11 +1,32 @@
-console.info("[SIGSS] constants carregado");
-
 /**
- * Constantes globais do sistema SIGSS-AutoIndex (v0.4.4)
+ * SIGSS-AutoIndex
+ *
+ * Sistema de enumeração automática de prontuários (FAA)
+ * para o SIGSS da Prefeitura Municipal de Betim.
+ *
+ * Desenvolvido por:
+ * Guilherme Paicheco Ferreira
+ *
+ * Projeto iniciado em 2026.
+ *
+ * Versão:
+ * 1.0.0
+ *
+ * Licença:
+ * MIT
  */
 
-const DEBUG_MODE = true;
+/**
+ * Modo de depuração do sistema.
+ * Quando setado para true, habilita a emissão de logs detalhados via Logger.
+ * @type {boolean}
+ */
+const DEBUG_MODE = false;
 
+/**
+ * Endpoints HTTP do sistema SIGSS.
+ * @type {Object.<string, string>}
+ */
 const ENDPOINTS = {
     IMPRIMIR_FAA: 'atendimentoConsulta/imprimirFAA',
     LISTA_IMOVEL: 'imobiliarioFamiliar2/lista',
@@ -13,11 +34,19 @@ const ENDPOINTS = {
     GET_ISAD: 'imobiliarioFamiliar/getIsad'
 };
 
+/**
+ * Mensagens padrão para os estados da enumeração.
+ * @type {Object.<string, string>}
+ */
 const MENSAGENS_ENUMERACAO = {
     NAO_ENCONTRADO: 'Não encontrado em imóvel',
     MULTIPLOS_ENCONTRADOS: 'Múltiplos imóveis encontrados'
 };
 
+/**
+ * Seletores CSS utilizados para localizar o Código SIGSS na tela.
+ * @type {string[]}
+ */
 const SELETORES_INPUT_SIGSS = [
     'input[name*="codigoSigss"]',
     'input[name*="codSigss"]',
@@ -35,6 +64,10 @@ const SELETORES_INPUT_SIGSS = [
     '#prontuario'
 ];
 
+/**
+ * Mapeamento de código ESF / Área para o sufixo numérico da Equipe.
+ * @type {Object.<string, string>}
+ */
 const MAPEAMENTO_EQUIPES = {
     '085': '01',
     '086': '03',
@@ -47,6 +80,10 @@ const MAPEAMENTO_EQUIPES = {
     '87': '02'
 };
 
+/**
+ * Configuração completa das Equipes de Saúde da Família e Microáreas.
+ * @type {Array<{equipeNome: string, codigoESF: string, area: string, sufixoEquipe: string, micros: Array<{numero: string, codigo: string}>}>}
+ */
 const EQUIPES_CONFIG = [
     {
         equipeNome: 'Equipe 01',

@@ -1,4 +1,4 @@
-# Fluxo do Pipeline de Impressão Inteligente - SIGSS-AutoIndex
+# Fluxo do Pipeline de Impressão Inteligente — SIGSS-AutoIndex (v1.0.0)
 
 Este documento detalha o fluxo passo a passo executado pelo **SIGSS-AutoIndex** durante a impressão de um prontuário (FAA).
 
@@ -7,7 +7,7 @@ Este documento detalha o fluxo passo a passo executado pelo **SIGSS-AutoIndex** 
 ## 🔁 Fluxo Completo de Execução
 
 ```
-1. Médicos clicam no botão "Imprimir" no SIGSS
+1. Profissional de Saúde clica no botão "Imprimir" no SIGSS
                     │
                     ▼
 2. SIGSS dispara requisição: POST atendimentoConsulta/imprimirFAA
@@ -26,26 +26,28 @@ Este documento detalha o fluxo passo a passo executado pelo **SIGSS-AutoIndex** 
    │        └── Prioridade 2: Baixa bytes do PDF e aplica regex (se input estiver vazio).
    │
    ├── 5.2. pesquisarImovelEGerarEnumeracao(codigoSigss)
-   │        ├── GET imobiliarioFamiliar2/lista?searchField=isen.isenCod&searchString=<codigo>
-   │        ├── POST imobiliarioFamiliar/visualizar (com imovPK.idp/ids) -> extrai isadPK
-   │        └── POST imobiliarioFamiliar/getIsad (com isadPK.idp/ids) -> extrai areaCod, miarCod, familia
+   │        ├── Executa 13 consultas simultâneas em paralelo (Promise.all) por microárea
+   │        ├── Se 0 encontrados ──► Retorna "Não encontrado em imóvel"
+   │        ├── Se >= 2 encontrados ──► Retorna "Múltiplos imóveis encontrados"
+   │        └── Se 1 encontrado ──► Executa POST imobiliarioFamiliar/visualizar (imovPK)
+   │                 └── Executa POST imobiliarioFamiliar/getIsad (isadPK) -> extrai atributos
    │
    ├── 5.3. formatarEnumeracao(dadosImovel)
-   │        └── Transforma dados em string ex: "086_03_018_03"
+   │        └── Transforma atributos na string oficial ex: "086_03_018_03"
    │
    ├── 5.4. baixarPdf(reportUrl)
-   │        └── Baixa o PDF original para um ArrayBuffer em memória.
+   │        └── Baixa os bytes do PDF original para um ArrayBuffer em memória.
    │
    ├── 5.5. editarPdf(pdfArrayBuffer, textoEnumeracao)
-   │        └── Insere 1 linha no topo centralizado via pdf-lib.
+   │        └── Carimba 1 linha centralizada no topo da 1ª página via pdf-lib em memória.
    │
    └── 5.6. abrirPdf(pdfModificadoArrayBuffer, windowOpenOriginal)
-            └── Cria Blob/ObjectURL e abre em nova janela do navegador.
+            └── Cria Blob URL temporária e abre a janela de impressão no navegador.
 ```
 
 ---
 
-## 🛡️ Fluxo de Tratamento de Falhas (Fallback)
+## 🛡️ Fluxo de Tratamento de Falhas (Fallback Garantido)
 
 Se **qualquer exceção ou erro de rede** ocorrer durante os passos 5.1 a 5.6:
 
@@ -56,7 +58,7 @@ Se **qualquer exceção ou erro de rede** ocorrer durante os passos 5.1 a 5.6:
                Captura no bloco try...catch
                              │
                              ▼
-         Registro silencioso no console.error do navegador
+         Registro de erro no Logger (se DEBUG_MODE = true)
                              │
                              ▼
     Execução imediata de windowOpenOriginal(reportUrl, '_blank')
@@ -65,4 +67,4 @@ Se **qualquer exceção ou erro de rede** ocorrer durante os passos 5.1 a 5.6:
      PDF original sem alterações é aberto normalmente para o médico
 ```
 
-O médico **nunca** percebe a falha e o trabalho de atendimento prossegue sem interrupções.
+O profissional de saúde **nunca** é bloqueado e a impressão do prontuário prossegue sem interrupção do atendimento público.

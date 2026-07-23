@@ -1,10 +1,33 @@
-console.info("[SIGSS] imovel carregado");
+/**
+ * SIGSS-AutoIndex
+ *
+ * Sistema de enumeração automática de prontuários (FAA)
+ * para o SIGSS da Prefeitura Municipal de Betim.
+ *
+ * Desenvolvido por:
+ * Guilherme Paicheco Ferreira
+ *
+ * Projeto iniciado em 2026.
+ *
+ * Versão:
+ * 1.0.0
+ *
+ * Licença:
+ * MIT
+ */
 
+/**
+ * Pesquisa o imóvel correspondente ao Código SIGSS e retorna os dados cadastrais do ISAD.
+ *
+ * @param {string} codigoSigss Código SIGSS do paciente
+ * @returns {Promise<Object|string>} Objeto com dados do ISAD ou mensagem de status
+ */
 async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
     const msgs = (typeof window !== 'undefined' && window.MENSAGENS_ENUMERACAO) || {
         NAO_ENCONTRADO: 'Não encontrado em imóvel',
         MULTIPLOS_ENCONTRADOS: 'Múltiplos imóveis encontrados'
     };
+    const logger = (typeof window !== 'undefined' && window.Logger) || null;
 
     if (!codigoSigss) {
         return msgs.NAO_ENCONTRADO;
@@ -25,44 +48,62 @@ async function pesquisarImovelEGerarEnumeracao(codigoSigss) {
             return msgs.NAO_ENCONTRADO;
         }
 
-        console.info("[SIGSS] visualizar()");
+        if (logger) logger.debug('Iniciando visualizarImovel()');
         const isadPK = await visualizarImovel(resultadoLista.imovPK);
         if (!isadPK) {
             return msgs.NAO_ENCONTRADO;
         }
 
-        console.info("[SIGSS] getIsad()");
+        if (logger) logger.debug('Iniciando obterDadosIsad()');
         const dadosIsad = await obterDadosIsad(isadPK);
         if (!dadosIsad) {
             return msgs.NAO_ENCONTRADO;
         }
 
-        console.info("[SIGSS] Objeto enviado ao formatter:", dadosIsad);
-        const fnFormatar = (typeof window !== 'undefined' && window.formatarEnumeracao) || (typeof formatarEnumeracao !== 'undefined' ? formatarEnumeracao : null);
-        if (typeof fnFormatar === 'function') {
-            const stringFinal = fnFormatar(dadosIsad);
-            console.info("[SIGSS] String final produzida pelo formatter:", stringFinal);
+        if (logger) {
+            logger.debug('Objeto enviado ao formatter:', dadosIsad);
+            const fnFormatar = (typeof window !== 'undefined' && window.formatarEnumeracao) || (typeof formatarEnumeracao !== 'undefined' ? formatarEnumeracao : null);
+            if (typeof fnFormatar === 'function') {
+                const stringFinal = fnFormatar(dadosIsad);
+                logger.debug('String final produzida pelo formatter:', stringFinal);
+            }
         }
 
         return dadosIsad;
 
     } catch (erro) {
-        console.error('[SIGSS][ERRO] Exceção em pesquisarImovelEGerarEnumeracao:', {
-            arquivo: 'src/imovel.js',
-            funcao: 'pesquisarImovelEGerarEnumeracao',
-            linhaAproximada: 42,
-            objetoRecebido: codigoSigss,
-            erro: erro
-        });
+        if (logger) {
+            logger.error('Exceção em pesquisarImovelEGerarEnumeracao:', {
+                arquivo: 'src/imovel.js',
+                funcao: 'pesquisarImovelEGerarEnumeracao',
+                linhaAproximada: 45,
+                objetoRecebido: codigoSigss,
+                erro: erro
+            });
+        }
         return msgs.NAO_ENCONTRADO;
     }
 }
 
+/**
+ * Ponto de entrada para busca do imóvel por Código SIGSS.
+ * Invoca a estratégia de busca paralela em todas as microáreas.
+ *
+ * @param {string} codigoSigss
+ * @returns {Promise<Object>}
+ */
 async function buscarImovelPorCodigoSigss(codigoSigss) {
     return await buscarEmTodasMicroareas(codigoSigss);
 }
 
+/**
+ * Executa 13 consultas paralelas simultâneas (Promise.all) em todas as microáreas cadastradas.
+ *
+ * @param {string} codigoSigss
+ * @returns {Promise<{status: string, imovPK?: Object}>}
+ */
 async function buscarEmTodasMicroareas(codigoSigss) {
+    const logger = (typeof window !== 'undefined' && window.Logger) || null;
     const fnListaMicroareas = (typeof window !== 'undefined' && window.getListaTodasMicroareas) || (typeof getListaTodasMicroareas !== 'undefined' ? getListaTodasMicroareas : null);
     
     let microareas = [];
@@ -78,11 +119,15 @@ async function buscarEmTodasMicroareas(codigoSigss) {
     const promessas = microareas.map(m => buscarEmMicroarea(m, codigoSigss));
     const resultados = await Promise.all(promessas);
 
-    console.info("[SIGSS] Total de microáreas consultadas:", microareas.length);
+    if (logger) {
+        logger.debug('Total de microáreas consultadas:', microareas.length);
+    }
 
     const encontrados = resultados.filter(r => r && r.status === 'SUCESSO' && r.imovPK);
 
-    console.info("[SIGSS] Total encontrados:", encontrados.length);
+    if (logger) {
+        logger.debug('Total de imóveis encontrados:', encontrados.length);
+    }
 
     if (encontrados.length === 0) {
         return { status: 'NAO_ENCONTRADO' };
@@ -90,8 +135,8 @@ async function buscarEmTodasMicroareas(codigoSigss) {
 
     if (encontrados.length === 1) {
         const unico = encontrados[0];
-        if (unico.microareaInfo) {
-            console.info("[SIGSS] Microárea encontrada:", unico.microareaInfo.area, unico.microareaInfo.microCodigo);
+        if (logger && unico.microareaInfo) {
+            logger.debug('Microárea encontrada:', unico.microareaInfo.area, unico.microareaInfo.microCodigo);
         }
         return { status: 'SUCESSO', imovPK: unico.imovPK };
     }
@@ -99,8 +144,18 @@ async function buscarEmTodasMicroareas(codigoSigss) {
     return { status: 'MULTIPLOS_ENCONTRADOS' };
 }
 
+/**
+ * Realiza a consulta HTTP GET em uma microárea específica do SIGSS.
+ *
+ * @param {Object} configuracaoMicroarea Dados da microárea
+ * @param {string} codigoSigss Código SIGSS
+ * @returns {Promise<{status: string, records: number, imovPK: Object|null, microareaInfo: Object}>}
+ */
 async function buscarEmMicroarea(configuracaoMicroarea, codigoSigss) {
-    console.info("[SIGSS] Consultando:", configuracaoMicroarea.codigoESF, configuracaoMicroarea.microNumero, codigoSigss);
+    const logger = (typeof window !== 'undefined' && window.Logger) || null;
+    if (logger) {
+        logger.debug('Consultando microárea:', configuracaoMicroarea.codigoESF, configuracaoMicroarea.microNumero, codigoSigss);
+    }
 
     try {
         const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
@@ -136,7 +191,6 @@ async function buscarEmMicroarea(configuracaoMicroarea, codigoSigss) {
         });
 
         if (!response.ok) {
-            console.info("[SIGSS] Records:", 0);
             return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
         }
 
@@ -144,8 +198,6 @@ async function buscarEmMicroarea(configuracaoMicroarea, codigoSigss) {
         const totalRecords = typeof data.records !== 'undefined' 
             ? Number(data.records) 
             : (Array.isArray(data.rows) ? data.rows.length : 0);
-
-        console.info("[SIGSS] Records:", totalRecords);
 
         if (totalRecords === 0) {
             return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
@@ -156,34 +208,26 @@ async function buscarEmMicroarea(configuracaoMicroarea, codigoSigss) {
             return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
         }
 
-        // Etapa 1: Resultado bruto da lista
-        console.info("[SIGSS] Resultado bruto da lista:");
-        console.info(primeiraLinha);
-
         const imovPK = extrairImovPK(primeiraLinha);
-
-        // Etapa 2: Exibir imovPK.idp e imovPK.ids
-        if (imovPK) {
-            console.info("[SIGSS] imovPK.idp =", imovPK.idp);
-            console.info("[SIGSS] imovPK.ids =", imovPK.ids);
-        } else {
-            console.error("[SIGSS][ERRO] imovPK não extraído de primeiraLinha:", {
-                arquivo: 'src/imovel.js',
-                funcao: 'buscarEmMicroarea',
-                linhaAproximada: 147,
-                objetoRecebido: primeiraLinha
-            });
+        if (!imovPK) {
+            return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
         }
 
         return { status: 'SUCESSO', records: totalRecords, imovPK, microareaInfo: configuracaoMicroarea };
 
     } catch (e) {
-        console.info("[SIGSS] Records:", 0);
         return { status: 'NAO_ENCONTRADO', records: 0, imovPK: null, microareaInfo: configuracaoMicroarea };
     }
 }
 
+/**
+ * Executa a requisição HTTP POST para visualizar os detalhes do imóvel e extrair o isadPK.
+ *
+ * @param {Object} imovPK Objeto identificador da chave do imóvel
+ * @returns {Promise<Object|null>} Objeto isadPK extraído ou null
+ */
 async function visualizarImovel(imovPK) {
+    const logger = (typeof window !== 'undefined' && window.Logger) || null;
     const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
         VISUALIZAR_IMOVEL: 'imobiliarioFamiliar/visualizar'
     };
@@ -198,11 +242,9 @@ async function visualizarImovel(imovPK) {
         'X-Requested-With': 'XMLHttpRequest'
     };
 
-    // Etapa 3: Antes da chamada visualizar()
-    console.info("[SIGSS] POST visualizar():");
-    console.info("URL:", urlVisualizar);
-    console.info("Body:", formData.toString());
-    console.info("Headers:", headersVisualizar);
+    if (logger) {
+        logger.debug('POST visualizar():', urlVisualizar, formData.toString());
+    }
 
     try {
         const response = await fetch(urlVisualizar, {
@@ -212,70 +254,51 @@ async function visualizarImovel(imovPK) {
         });
 
         if (!response.ok) {
-            console.error("[SIGSS][ERRO] visualizar() retornou HTTP status:", response.status, {
-                arquivo: 'src/imovel.js',
-                funcao: 'visualizarImovel',
-                linhaAproximada: 185,
-                objetoRecebido: imovPK
-            });
+            if (logger) {
+                logger.error('visualizar() retornou HTTP status:', response.status, imovPK);
+            }
             return null;
         }
 
         const textResponse = await response.text();
 
-        // Etapa 4: Log do JSON completo sem resumir
         let data = null;
         try {
             data = JSON.parse(textResponse);
-            console.info("[SIGSS] JSON completo do visualizar():", data);
+            if (logger) logger.debug('JSON completo do visualizar():', data);
         } catch (eParse) {
-            console.error("[SIGSS][ERRO] Falha ao fazer parse do JSON em visualizar():", eParse, {
-                arquivo: 'src/imovel.js',
-                funcao: 'visualizarImovel',
-                linhaAproximada: 198,
-                textoBruto: textResponse.substring(0, 500)
-            });
+            if (logger) {
+                logger.error('Falha ao fazer parse do JSON em visualizar():', eParse);
+            }
             return null;
         }
 
-        // Etapa 5: Localizando isadPK
-        console.info("[SIGSS] Tentando localizar isadPK...");
         const isadPK = extrairIsadPK(data);
 
         if (isadPK) {
-            console.info("[SIGSS] isadPK encontrado:", isadPK);
+            if (logger) logger.debug('isadPK localizado:', isadPK);
         } else {
-            console.error("[SIGSS] isadPK não encontrado");
-            
-            // Etapa 6: Listar chaves existentes caso não localize isadPK
-            if (data && typeof data === 'object') {
-                try {
-                    const keysNivel1 = Object.keys(data);
-                    console.info("[SIGSS] Chaves de nível 1 do JSON de visualizar():", keysNivel1);
-                    for (const key of keysNivel1) {
-                        if (data[key] && typeof data[key] === 'object') {
-                            console.info(`[SIGSS] Chaves do sub-objeto response['${key}']:`, Object.keys(data[key]));
-                        }
-                    }
-                } catch (eKeys) {}
-            }
+            if (logger) logger.error('isadPK não encontrado no JSON de visualizar()');
         }
 
         return isadPK;
 
     } catch (erro) {
-        console.error('[SIGSS][ERRO] Exceção capturada em visualizarImovel:', {
-            arquivo: 'src/imovel.js',
-            funcao: 'visualizarImovel',
-            linhaAproximada: 230,
-            objetoRecebido: imovPK,
-            erro: erro
-        });
+        if (logger) {
+            logger.error('Exceção capturada em visualizarImovel:', erro);
+        }
         return null;
     }
 }
 
+/**
+ * Executa a requisição HTTP POST para obter os dados detalhados do ISAD (área, microárea, família).
+ *
+ * @param {Object} isadPK Objeto identificador da chave do ISAD
+ * @returns {Promise<Object|null>} Objeto com atributos cadastrais ou null
+ */
 async function obterDadosIsad(isadPK) {
+    const logger = (typeof window !== 'undefined' && window.Logger) || null;
     const endpoints = (typeof window !== 'undefined' && window.ENDPOINTS) || {
         GET_ISAD: 'imobiliarioFamiliar/getIsad'
     };
@@ -290,11 +313,9 @@ async function obterDadosIsad(isadPK) {
         'X-Requested-With': 'XMLHttpRequest'
     };
 
-    // Etapa 7: Antes da chamada getIsad()
-    console.info("[SIGSS] POST getIsad():");
-    console.info("URL:", urlGetIsad);
-    console.info("Body:", formData.toString());
-    console.info("Headers:", headersGetIsad);
+    if (logger) {
+        logger.debug('POST getIsad():', urlGetIsad, formData.toString());
+    }
 
     try {
         const response = await fetch(urlGetIsad, {
@@ -304,62 +325,30 @@ async function obterDadosIsad(isadPK) {
         });
 
         if (!response.ok) {
-            console.error("[SIGSS][ERRO] getIsad() retornou HTTP status:", response.status, {
-                arquivo: 'src/imovel.js',
-                funcao: 'obterDadosIsad',
-                linhaAproximada: 260,
-                objetoRecebido: isadPK
-            });
+            if (logger) {
+                logger.error('getIsad() retornou HTTP status:', response.status, isadPK);
+            }
             return null;
         }
 
         const textResponse = await response.text();
 
-        // Etapa 8: Log do JSON completo retornado por getIsad()
         let data = null;
         try {
             data = JSON.parse(textResponse);
-            console.info("[SIGSS] JSON completo do getIsad():", data);
+            if (logger) logger.debug('JSON completo do getIsad():', data);
         } catch (eParse) {
-            console.error("[SIGSS][ERRO] Falha ao fazer parse do JSON em getIsad():", eParse, {
-                arquivo: 'src/imovel.js',
-                funcao: 'obterDadosIsad',
-                linhaAproximada: 275,
-                textoBruto: textResponse.substring(0, 500)
-            });
+            if (logger) {
+                logger.error('Falha ao fazer parse do JSON em getIsad():', eParse);
+            }
             return null;
         }
 
-        // v0.5.3: Inspeção detalhada de response.isad
         const isadObj = (data && data.isad) ? data.isad : data;
 
         if (isadObj) {
-            console.info("[SIGSS] response.isad:", isadObj);
-            try {
-                console.info("[SIGSS] Object.keys(response.isad):", Object.keys(isadObj));
-            } catch (e) {}
-
             const areaObj = isadObj.area || (data && data.area);
             const microAreaObj = isadObj.microArea || (data && data.microArea);
-
-            console.info("[SIGSS] response.isad.area:", areaObj);
-            console.info("[SIGSS] response.isad.microArea:", microAreaObj);
-
-            if (areaObj && typeof areaObj === 'object') {
-                try {
-                    console.info("[SIGSS] Object.keys(response.isad.area):", Object.keys(areaObj));
-                } catch (e) {}
-            } else {
-                console.info("[SIGSS] Objeto area completo (não-objeto):", areaObj);
-            }
-
-            if (microAreaObj && typeof microAreaObj === 'object') {
-                try {
-                    console.info("[SIGSS] Object.keys(response.isad.microArea):", Object.keys(microAreaObj));
-                } catch (e) {}
-            } else {
-                console.info("[SIGSS] Objeto microArea completo (não-objeto):", microAreaObj);
-            }
 
             const areaCod = (areaObj && areaObj.areaCod) || isadObj.areaCod || (data && data.areaCod);
             const miarCod = (microAreaObj && microAreaObj.miarCod) || isadObj.miarCod || (data && data.miarCod);
@@ -373,42 +362,44 @@ async function obterDadosIsad(isadPK) {
                 isadNumFamiliaSiab: isadNumFamiliaSiab !== undefined ? String(isadNumFamiliaSiab) : undefined
             };
 
-            console.info("[SIGSS] Objeto ISAD montado:", objetoResultante);
+            if (logger) {
+                logger.debug('Objeto ISAD montado:', objetoResultante);
+            }
 
             if (!areaCod || !miarCod || typeof isadNumFamiliaSiab === 'undefined') {
-                console.error("[SIGSS][ERRO] Propriedades do ISAD incompletas no JSON de getIsad():", {
-                    arquivo: 'src/imovel.js',
-                    funcao: 'obterDadosIsad',
-                    linhaAproximada: 360,
-                    areaCod,
-                    miarCod,
-                    isadNumFamiliaSiab,
-                    isadObj,
-                    areaObj,
-                    microAreaObj,
-                    data
-                });
+                if (logger) {
+                    logger.error('Propriedades do ISAD incompletas no JSON de getIsad():', {
+                        areaCod,
+                        miarCod,
+                        isadNumFamiliaSiab,
+                        data
+                    });
+                }
                 return null;
             }
 
             return objetoResultante;
         } else {
-            console.error("[SIGSS][ERRO] Objeto response.isad inexistente no JSON retornado por getIsad():", data);
+            if (logger) {
+                logger.error('Objeto response.isad inexistente no JSON retornado por getIsad():', data);
+            }
             return null;
         }
 
     } catch (erro) {
-        console.error('[SIGSS][ERRO] Exceção capturada em obterDadosIsad:', {
-            arquivo: 'src/imovel.js',
-            funcao: 'obterDadosIsad',
-            linhaAproximada: 375,
-            objetoRecebido: isadPK,
-            erro: erro
-        });
+        if (logger) {
+            logger.error('Exceção capturada em obterDadosIsad:', erro);
+        }
         return null;
     }
 }
 
+/**
+ * Monta a string final de enumeração a partir dos dados do ISAD.
+ *
+ * @param {Object} dadosIsad Objeto contendo areaCod, miarCod e isadNumFamiliaSiab
+ * @returns {string}
+ */
 function montarCodigoFinal(dadosIsad) {
     const fnSufixo = (typeof window !== 'undefined' && window.getSufixoEquipePorESF) || (() => '01');
     const areaNumerica = dadosIsad.areaCod.replace(/\D/g, '');
@@ -420,6 +411,12 @@ function montarCodigoFinal(dadosIsad) {
     return `${codigoEquipeFormatado}_${microAreaFormatada}_${numeroFamiliaFormatado}_${sufixoEquipe}`;
 }
 
+/**
+ * Extrai o objeto imovPK ({idp, ids}) da linha de resultado do grid.
+ *
+ * @param {Object} linha Linha do grid do SIGSS
+ * @returns {Object|null} Objeto imovPK ou null
+ */
 function extrairImovPK(linha) {
     if (linha.imovPK && typeof linha.imovPK.idp !== 'undefined' && typeof linha.imovPK.ids !== 'undefined') {
         return { idp: linha.imovPK.idp, ids: linha.imovPK.ids };
@@ -439,10 +436,15 @@ function extrairImovPK(linha) {
     return null;
 }
 
+/**
+ * Extrai a chave isadPK ({idp, ids}) a partir da resposta JSON do endpoint visualizar.
+ *
+ * @param {Object} data Objeto JSON retornado por visualizar()
+ * @returns {Object|null} Objeto isadPK ou null
+ */
 function extrairIsadPK(data) {
     if (!data) return null;
 
-    // 1. Padrões diretos anteriores
     if (data.isadPK && typeof data.isadPK.idp !== 'undefined' && typeof data.isadPK.ids !== 'undefined') {
         return { idp: data.isadPK.idp, ids: data.isadPK.ids };
     }
@@ -453,61 +455,29 @@ function extrairIsadPK(data) {
         return { idp: data.isadIdp, ids: data.isadIds };
     }
 
-    // 2. Auditoria v0.5.2 - Navegação estrita em imov.domicilioList -> informacaoDomicilioList -> isadPK
     if (data.imov && data.imov.domicilioList !== undefined) {
         const domList = data.imov.domicilioList;
-        console.info("[SIGSS] response.imov.domicilioList:", domList);
         if (domList && typeof domList === 'object') {
-            try {
-                console.info("[SIGSS] Object.keys(response.imov.domicilioList):", Object.keys(domList));
-            } catch (e) {}
-
             const domObj = Array.isArray(domList) ? domList[0] : domList;
 
             if (domObj && domObj.informacaoDomicilioList !== undefined) {
                 const infoDom = domObj.informacaoDomicilioList;
-                console.info("[SIGSS] response.imov.domicilioList.informacaoDomicilioList:", infoDom);
                 if (infoDom && typeof infoDom === 'object') {
-                    try {
-                        console.info("[SIGSS] Object.keys(informacaoDomicilioList):", Object.keys(infoDom));
-                    } catch (e) {}
-
                     const infoObj = Array.isArray(infoDom) ? infoDom[0] : infoDom;
                     if (infoObj) {
                         if (infoObj.isadPK && typeof infoObj.isadPK.idp !== 'undefined' && typeof infoObj.isadPK.ids !== 'undefined') {
-                            const isadObj = { idp: infoObj.isadPK.idp, ids: infoObj.isadPK.ids };
-                            console.info("[SIGSS] ISAD encontrado:", isadObj);
-                            return isadObj;
+                            return { idp: infoObj.isadPK.idp, ids: infoObj.isadPK.ids };
                         } else if (typeof infoObj.isadIdp !== 'undefined' && typeof infoObj.isadIds !== 'undefined') {
-                            const isadObj = { idp: infoObj.isadIdp, ids: infoObj.isadIds };
-                            console.info("[SIGSS] ISAD encontrado:", isadObj);
-                            return isadObj;
-                        } else {
-                            try {
-                                console.info("[SIGSS] Propriedades existentes de informacaoDomicilioList:", Object.keys(infoObj));
-                            } catch (e) {}
+                            return { idp: infoObj.isadIdp, ids: infoObj.isadIds };
                         }
                     }
                 }
             } else if (domList.informacaoDomicilioList !== undefined) {
                 const infoDom = domList.informacaoDomicilioList;
-                console.info("[SIGSS] response.imov.domicilioList.informacaoDomicilioList:", infoDom);
                 if (infoDom && typeof infoDom === 'object') {
-                    try {
-                        console.info("[SIGSS] Object.keys(informacaoDomicilioList):", Object.keys(infoDom));
-                    } catch (e) {}
-
                     const infoObj = Array.isArray(infoDom) ? infoDom[0] : infoDom;
-                    if (infoObj) {
-                        if (infoObj.isadPK && typeof infoObj.isadPK.idp !== 'undefined' && typeof infoObj.isadPK.ids !== 'undefined') {
-                            const isadObj = { idp: infoObj.isadPK.idp, ids: infoObj.isadPK.ids };
-                            console.info("[SIGSS] ISAD encontrado:", isadObj);
-                            return isadObj;
-                        } else {
-                            try {
-                                console.info("[SIGSS] Propriedades existentes de informacaoDomicilioList:", Object.keys(infoObj));
-                            } catch (e) {}
-                        }
+                    if (infoObj && infoObj.isadPK && typeof infoObj.isadPK.idp !== 'undefined' && typeof infoObj.isadPK.ids !== 'undefined') {
+                        return { idp: infoObj.isadPK.idp, ids: infoObj.isadPK.ids };
                     }
                 }
             }

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "SIGSS-AutoIndex",
-  "version": "0.5.3",
-  "description": "Pipeline Inteligente para enumeração automática e transparente dos prontuários (FAA) emitidos pelo SIGSS (Prefeitura de Betim).",
+  "version": "1.0.0",
+  "description": "Pipeline Inteligente para enumeração automática e transparente dos prontuários (FAA) emitidos pelo SIGSS da Prefeitura Municipal de Betim.",
   "content_scripts": [
     {
       "matches": [

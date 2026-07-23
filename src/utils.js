@@ -1,5 +1,29 @@
-console.info("[SIGSS] utils carregado");
+/**
+ * SIGSS-AutoIndex
+ *
+ * Sistema de enumeração automática de prontuários (FAA)
+ * para o SIGSS da Prefeitura Municipal de Betim.
+ *
+ * Desenvolvido por:
+ * Guilherme Paicheco Ferreira
+ *
+ * Projeto iniciado em 2026.
+ *
+ * Versão:
+ * 1.0.0
+ *
+ * Licença:
+ * MIT
+ */
 
+/**
+ * Obtém o Código SIGSS utilizando política de prioridade estrita:
+ * Prioridade 1: Leitura do valor no input da tela do SIGSS.
+ * Prioridade 2: Extração via regex no documento PDF baixado.
+ *
+ * @param {string|null} urlReport URL opcional do relatório PDF
+ * @returns {Promise<string|null>} Código SIGSS localizado ou null
+ */
 async function obterCodigoSIGSS(urlReport = null) {
     try {
         const codigoDoInput = lerCodigoDoInputTela();
@@ -16,11 +40,19 @@ async function obterCodigoSIGSS(urlReport = null) {
 
         return null;
     } catch (erro) {
-        console.error('[SIGSS] Erro em obterCodigoSIGSS:', erro);
+        const logger = (typeof window !== 'undefined' && window.Logger) || null;
+        if (logger) {
+            logger.error('Erro em obterCodigoSIGSS:', erro);
+        }
         return null;
     }
 }
 
+/**
+ * Lê o Código SIGSS do input ativo na tela do navegador (Prioridade 1).
+ *
+ * @returns {string|null}
+ */
 function lerCodigoDoInputTela() {
     try {
         const doc = typeof document !== 'undefined' ? document : null;
@@ -58,6 +90,12 @@ function lerCodigoDoInputTela() {
     }
 }
 
+/**
+ * Extrai o Código SIGSS analisando o stream de texto do relatório PDF (Prioridade 2).
+ *
+ * @param {string} urlReport URL do relatório PDF
+ * @returns {Promise<string|null>}
+ */
 async function lerCodigoDoDocumentoPdf(urlReport) {
     try {
         const response = await fetch(urlReport);
